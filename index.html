@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Air Mouse - Laser Pointer Remote</title>
+  <title>Air Mouse - Pointer Controller</title>
 
   <!-- CDNs (QRCode e PeerJS) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -45,7 +45,7 @@
       display: none !important;
     }
 
-    /* ================= DESKTOP STYLES ================= */
+    /* ================= ESTILOS DESKTOP (HOST) ================= */
     #virtual-cursor {
       width: 18px;
       height: 18px;
@@ -156,19 +156,19 @@
     }
 
 
-    /* ================= MOBILE CONTROLLER (POINTER MODE) ================= */
+    /* ================= ESTILOS CELULAR (POINTER CONTROLLER) ================= */
     #controller-view {
       display: flex;
       flex-direction: column;
       height: 100vh;
-      padding: 1.5rem;
+      padding: 1rem;
       touch-action: none;
-      gap: 1rem;
+      gap: 0.8rem;
     }
 
     .controller-header {
       text-align: center;
-      padding: 0.5rem;
+      padding: 0.3rem;
       font-weight: bold;
       color: var(--accent-color);
     }
@@ -182,19 +182,14 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 1rem;
-      padding: 1.5rem;
+      gap: 0.8rem;
+      padding: 1rem;
       text-align: center;
-    }
-
-    .remote-icon {
-      font-size: 3rem;
-      margin-bottom: 0.5rem;
     }
 
     .action-btn {
       width: 100%;
-      padding: 1.2rem;
+      padding: 1.1rem;
       background: var(--btn-color);
       color: white;
       border: none;
@@ -217,7 +212,42 @@
     .mouse-buttons {
       display: flex;
       gap: 1rem;
-      height: 100px;
+      height: 85px;
+    }
+
+    /* Painel de Ajustes dos Eixos */
+    .controls-panel {
+      background: var(--card-bg);
+      padding: 0.8rem;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .axis-toggles {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      padding: 0.6rem 0.2rem;
+      background: #334155;
+      color: #94a3b8;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .toggle-btn.active {
+      background: #38bdf8;
+      color: #0f172a;
+      border-color: #38bdf8;
     }
 
     .sensitivity-control {
@@ -225,9 +255,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
-      background: var(--card-bg);
-      padding: 0.8rem 1rem;
-      border-radius: 12px;
+      font-size: 0.9rem;
     }
   </style>
 </head>
@@ -240,7 +268,7 @@
     <div id="qr-modal" class="modal">
       <div class="modal-card">
         <h2>Conecte seu Celular</h2>
-        <p>Escaneie o QR Code abaixo para usar seu celular como Controle Remoto Pointer:</p>
+        <p>Escaneie o QR Code abaixo para usar seu celular como Air Mouse:</p>
         <div id="qrcode"></div>
         <div id="status-badge" class="badge">Aguardando Conexão...</div>
       </div>
@@ -272,23 +300,28 @@
     </div>
 
     <div class="pointer-zone">
-      <div class="remote-icon">📱🎯</div>
-      <p>Aponte a <b>ponta superior</b> do celular para a tela e mova no ar como um controle remoto.</p>
-      
-      <!-- Botão obrigatorio em navegadores modernos para habilitar sensores -->
+      <p>Aponte o <b>topo do celular</b> para a tela como um controle.</p>
       <button id="btn-enable-sensors" class="action-btn">Ativar Modo Controle</button>
+    </div>
+
+    <!-- PAINEL DE AJUSTE DE DIREÇÃO E EIXOS -->
+    <div class="controls-panel">
+      <div class="axis-toggles">
+        <button id="btn-invert-x" class="toggle-btn">Inverter X</button>
+        <button id="btn-invert-y" class="toggle-btn">Inverter Y</button>
+        <button id="btn-swap-xy" class="toggle-btn">Trocar X ↔ Y</button>
+      </div>
+
+      <div class="sensitivity-control">
+        <label for="sens-slider">Sensibilidade:</label>
+        <input type="range" id="sens-slider" min="0.5" max="4" step="0.2" value="1.8">
+      </div>
     </div>
 
     <!-- BOTÕES DE CLIQUE -->
     <div class="mouse-buttons">
       <button id="btn-left-click" class="action-btn">Clique Esquerdo</button>
       <button id="btn-right-click" class="action-btn secondary">Clique Direito</button>
-    </div>
-
-    <!-- AJUSTE DE SENSIBILIDADE -->
-    <div class="sensitivity-control">
-      <label for="sens-slider">Sensibilidade:</label>
-      <input type="range" id="sens-slider" min="0.5" max="4" step="0.2" value="1.8">
     </div>
   </div>
 
@@ -342,7 +375,7 @@
             cursorX += data.dx;
             cursorY += data.dy;
 
-            // Limites da tela
+            // Mantém o cursor dentro dos limites da tela
             cursorX = Math.max(0, Math.min(window.innerWidth, cursorX));
             cursorY = Math.max(0, Math.min(window.innerHeight, cursorY));
 
@@ -385,7 +418,7 @@
 
 
     /* ==========================================================================
-       MODO CONTROLLER (POINTER VIA DEVICE MOTION / ROTATION RATE)
+       MODO CONTROLLER (AJUSTE FINO DE EIXOS PARA AIR MOUSE)
        ========================================================================== */
     function initControllerMode(targetRoomId) {
       document.getElementById('controller-view').classList.remove('hidden');
@@ -396,8 +429,32 @@
       const btnRight = document.getElementById('btn-right-click');
       const sensSlider = document.getElementById('sens-slider');
 
+      // Botões de alternância de eixos
+      const btnInvertX = document.getElementById('btn-invert-x');
+      const btnInvertY = document.getElementById('btn-invert-y');
+      const btnSwapXY = document.getElementById('btn-swap-xy');
+
+      let invertX = false;
+      let invertY = false;
+      let swapXY = false;
       let sensitivity = parseFloat(sensSlider.value);
       let conn = null;
+
+      // Listeners para os seletores de eixos
+      btnInvertX.addEventListener('click', () => {
+        invertX = !invertX;
+        btnInvertX.classList.toggle('active', invertX);
+      });
+
+      btnInvertY.addEventListener('click', () => {
+        invertY = !invertY;
+        btnInvertY.classList.toggle('active', invertY);
+      });
+
+      btnSwapXY.addEventListener('click', () => {
+        swapXY = !swapXY;
+        btnSwapXY.classList.toggle('active', swapXY);
+      });
 
       sensSlider.addEventListener('input', (e) => {
         sensitivity = parseFloat(e.target.value);
@@ -420,7 +477,6 @@
         });
       });
 
-      /* Solicita permissões de movimento (necessário para iOS e Androids novos) */
       btnSensors.addEventListener('click', async () => {
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
           try {
@@ -442,7 +498,6 @@
         btnSensors.innerText = "Controle Ativo!";
         btnSensors.style.background = "#22c55e";
 
-        // Escuta a VELOCIDADE DE ROTAÇÃO (Giroscópio físico)
         window.addEventListener('devicemotion', handleMotion);
       }
 
@@ -452,23 +507,25 @@
         const rot = event.rotationRate;
         if (!rot) return;
 
-        /*
-           Mapeamento para segurar como Controle Remoto (ponta apontada para frente):
-           - Mover para os lados (Guinar / Yaw): Rotação no eixo Alpha ou Gamma do celular.
-           - Mover para cima/baixo (Arfagem / Pitch): Rotação no eixo Beta.
-        */
-        
-        // Inverte ou ajusta os sinais para corresponder ao movimento natural do ponteiro
-        let gyroX = (rot.alpha || rot.gamma || 0); // Giro lateral
-        let gyroY = (rot.beta || 0);               // Giro vertical
+        // Leitura bruta dos sensores ao apontar para a frente
+        let rawYaw = (rot.alpha || rot.gamma || 0);  // Rotação lateral
+        let rawPitch = (rot.beta || 0);              // Rotação vertical
 
-        // Calcula a variação de movimento (dx, dy)
-        let dx = -gyroX * sensitivity * 0.8;
-        let dy = -gyroY * sensitivity * 0.8;
+        // Mapeamento inicial ajustado
+        let valX = -rawYaw;
+        let valY = -rawPitch;
 
-        // Zona morta (Deadzone) para eliminar tremores mínimos da mão
-        if (Math.abs(dx) < 0.3) dx = 0;
-        if (Math.abs(dy) < 0.3) dy = 0;
+        // 1. Se "Trocar X ↔ Y" estiver ativado, inverter os papéis dos sensores
+        let axisX = swapXY ? valY : valX;
+        let axisY = swapXY ? valX : valY;
+
+        // 2. Aplica inversões de sentido
+        let dx = axisX * sensitivity * (invertX ? -1 : 1);
+        let dy = axisY * sensitivity * (invertY ? -1 : 1);
+
+        // Zona morta para conter tremores de mão solta
+        if (Math.abs(dx) < 0.25) dx = 0;
+        if (Math.abs(dy) < 0.25) dy = 0;
 
         if (dx !== 0 || dy !== 0) {
           conn.send({
