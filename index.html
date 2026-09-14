@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Air Mouse - Pointer Controller</title>
+
+  <!-- CDNs das bibliotecas (QRCode e PeerJS para WebRTC) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --accent-color: #38bdf8;
+      --text-color: #f8fafc;
+      --btn-color: #2563eb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    .view {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* ================= ESTILOS DESKTOP (HOST) ================= */
+    #virtual-cursor {
+      width: 20px;
+      height: 20px;
+      background-color: var(--accent-color);
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none; /* Permite clicar nos elementos que estão por baixo */
+      z-index: 9999;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.8);
+      transition: transform 0.05s ease-out;
+    }
+
+    #virtual-cursor.active {
+      transform: translate(-50%, -50%) scale(0.7);
+      background-color: #22c55e;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-card {
+      background: var(--card-bg);
+      padding: 2rem;
+      border-radius: 16px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      max-width: 360px;
+    }
+
+    #qrcode {
+      margin: 1.5rem auto;
+      padding: 10px;
+      background: white;
+      border-radius: 8px;
+      width: max-content;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      background: #f59e0b;
+      color: #000;
+      font-weight: bold;
+      border-radius: 20px;
+      font-size: 0.85rem;
+    }
+
+    .badge.connected {
+      background: #22c55e;
+      color: #fff;
+    }
+
+    .desktop-content {
+      padding: 3rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .interactive-zone {
+      margin-top: 3rem;
+      background: var(--card-bg);
+      padding: 2rem;
+      border-radius: 12px;
+    }
+
+    .card-grid {
+      display: flex;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .test-btn {
+      flex: 1;
+      padding: 1rem;
+      background: var(--btn-color);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .test-btn:hover {
+      background: #1d4ed8;
+    }
+
+    .test-btn.highlight {
+      background: #22c55e;
+    }
+
+    #feedback-log {
+      color: #94a3b8;
+      font-style: italic;
+    }
+
+
+    /* ================= ESTILOS CELULAR (CONTROLLER) ================= */
+    #controller-view {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      padding: 1rem;
+      touch-action: none; /* Impede rolagem de página ao arrastar o dedo */
+    }
+
+    .controller-header {
+      text-align: center;
+      padding: 0.5rem;
+      font-weight: bold;
+      color: var(--accent-color);
+    }
+
+    #touchpad {
+      flex: 1;
+      background: var(--card-bg);
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 1rem 0;
+      position: relative;
+    }
+
+    .touchpad-hint {
+      color: #64748b;
+      pointer-events: none;
+      text-align: center;
+    }
+
+    .mouse-buttons {
+      display: flex;
+      gap: 1rem;
+      height: 80px;
+    }
+
+    .click-btn {
+      flex: 1;
+      background: var(--btn-color);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      touch-action: manipulation;
+    }
+
+    .click-btn.secondary {
+      background: #475569;
+    }
+
+    .click-btn:active {
+      opacity: 0.8;
+      transform: scale(0.98);
+    }
+
+    .sensitivity-control {
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================= VISTA DO DESKTOP (HOST) ================= -->
+  <div id="host-view" class="view hidden">
+    <!-- Cursor Virtual na tela do PC -->
+    <div id="virtual-cursor"></div>
+
+    <!-- Modal com o QR Code -->
+    <div id="qr-modal" class="modal">
+      <div class="modal-card">
+        <h2>Conecte seu Celular</h2>
+        <p>Escaneie o QR Code abaixo para usar seu celular como mouse:</p>
+        <div id="qrcode"></div>
+        <div id="status-badge" class="badge">Aguardando Conexão...</div>
+      </div>
+    </div>
+
+    <!-- Interface Interativa de Teste no PC -->
+    <main class="desktop-content">
+      <header>
+        <h1>Air Mouse Interface</h1>
+        <p>Mova o dedo no celular para controlar o cursor abaixo!</p>
+      </header>
+
+      <section class="interactive-zone">
+        <h2>Área de Teste de Clique</h2>
+        <div class="card-grid">
+          <button class="test-btn" onclick="highlightCard(this)">Botão 1</button>
+          <button class="test-btn" onclick="highlightCard(this)">Botão 2</button>
+          <button class="test-btn" onclick="highlightCard(this)">Botão 3</button>
+        </div>
+        <div id="feedback-log">Nenhum botão clicado ainda.</div>
+      </section>
+    </main>
+  </div>
+
+
+  <!-- ================= VISTA DO CELULAR (CONTROLLER) ================= -->
+  <div id="controller-view" class="view hidden">
+    <div class="controller-header">
+      <span id="controller-status">Conectando ao PC...</span>
+    </div>
+
+    <!-- ÁREA DO TRACKPAD -->
+    <div id="touchpad">
+      <div class="touchpad-hint">Deslize o dedo aqui para mover o cursor</div>
+    </div>
+
+    <!-- BOTÕES DO MOUSE -->
+    <div class="mouse-buttons">
+      <button id="btn-left-click" class="click-btn">Clique Esquerdo</button>
+      <button id="btn-right-click" class="click-btn secondary">Clique Direito</button>
+    </div>
+
+    <!-- CONTROLE DE SENSIBILIDADE -->
+    <div class="sensitivity-control">
+      <label for="sens-slider">Sensibilidade:</label>
+      <input type="range" id="sens-slider" min="0.5" max="4" step="0.5" value="2">
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const roomId = urlParams.get('room');
+
+      if (roomId) {
+        // Se houver o parâmetro 'room' na URL, o dispositivo é o CELULAR
+        initControllerMode(roomId);
+      } else {
+        // Se não houver o parâmetro, o dispositivo é o COMPUTADOR (HOST)
+        initHostMode();
+      }
+    });
+
+    /* ==========================================================================
+       MODO HOST (DESKTOP)
+       ========================================================================== */
+    function initHostMode() {
+      document.getElementById('host-view').classList.remove('hidden');
+
+      const cursor = document.getElementById('virtual-cursor');
+      const statusBadge = document.getElementById('status-badge');
+      const qrModal = document.getElementById('qr-modal');
+
+      let cursorX = window.innerWidth / 2;
+      let cursorY = window.innerHeight / 2;
+      updateCursorPosition();
+
+      // Cria a sala P2P com PeerJS
+      const peer = new Peer();
+
+      peer.on('open', (id) => {
+        // URL que será gerada no QR Code contendo o ID da sala
+        const connectionUrl = `${window.location.origin}${window.location.pathname}?room=${id}`;
+
+        // Renderiza o QR Code
+        new QRCode(document.getElementById('qrcode'), {
+          text: connectionUrl,
+          width: 180,
+          height: 180
+        });
+      });
+
+      // Aguarda o celular se conectar
+      peer.on('connection', (conn) => {
+        statusBadge.textContent = "Conectado!";
+        statusBadge.classList.add('connected');
+
+        setTimeout(() => {
+          qrModal.style.display = 'none';
+        }, 800);
+
+        // Ouve as mensagens do celular em tempo real
+        conn.on('data', (data) => {
+          if (data.type === 'move') {
+            cursorX += data.dx;
+            cursorY += data.dy;
+
+            // Mantém o cursor dentro dos limites da tela
+            cursorX = Math.max(0, Math.min(window.innerWidth, cursorX));
+            cursorY = Math.max(0, Math.min(window.innerHeight, cursorY));
+
+            updateCursorPosition();
+          } 
+          else if (data.type === 'click') {
+            triggerVirtualClick(cursorX, cursorY);
+          }
+        });
+
+        conn.on('close', () => {
+          statusBadge.textContent = "Desconectado";
+          statusBadge.classList.remove('connected');
+          qrModal.style.display = 'flex';
+        });
+      });
+
+      function updateCursorPosition() {
+        cursor.style.left = `${cursorX}px`;
+        cursor.style.top = `${cursorY}px`;
+      }
+
+      function triggerVirtualClick(x, y) {
+        cursor.classList.add('active');
+        setTimeout(() => cursor.classList.remove('active'), 150);
+
+        // Encontra o elemento na coordenada exata e simula o clique
+        const element = document.elementFromPoint(x, y);
+        if (element) {
+          element.click();
+        }
+      }
+    }
+
+    /* Função utilitária do botão de teste */
+    function highlightCard(buttonElement) {
+      const log = document.getElementById('feedback-log');
+      log.textContent = `Você clicou no: ${buttonElement.textContent} às ${new Date().toLocaleTimeString()}`;
+      buttonElement.classList.add('highlight');
+      setTimeout(() => buttonElement.classList.remove('highlight'), 500);
+    }
+
+
+    /* ==========================================================================
+       MODO CONTROLLER (CELULAR)
+       ========================================================================== */
+    function initControllerMode(targetRoomId) {
+      document.getElementById('controller-view').classList.remove('hidden');
+
+      const statusEl = document.getElementById('controller-status');
+      const touchpad = document.getElementById('touchpad');
+      const btnLeft = document.getElementById('btn-left-click');
+      const btnRight = document.getElementById('btn-right-click');
+      const sensSlider = document.getElementById('sens-slider');
+
+      let sensitivity = parseFloat(sensSlider.value);
+      let conn = null;
+
+      sensSlider.addEventListener('input', (e) => {
+        sensitivity = parseFloat(e.target.value);
+      });
+
+      // Conecta ao ID transmitido pela URL do QR Code
+      const peer = new Peer();
+
+      peer.on('open', () => {
+        conn = peer.connect(targetRoomId);
+
+        conn.on('open', () => {
+          statusEl.textContent = "Conectado ao PC!";
+          statusEl.style.color = "#22c55e";
+        });
+
+        conn.on('close', () => {
+          statusEl.textContent = "Conexão perdida.";
+          statusEl.style.color = "#ef4444";
+        });
+      });
+
+      /* Captura de gestos no Touchpad */
+      let lastTouchX = 0;
+      let lastTouchY = 0;
+      let isTouching = false;
+      let touchStartTime = 0;
+
+      touchpad.addEventListener('touchstart', (e) => {
+        isTouching = true;
+        touchStartTime = Date.now();
+        const touch = e.touches[0];
+        lastTouchX = touch.clientX;
+        lastTouchY = touch.clientY;
+      });
+
+      touchpad.addEventListener('touchmove', (e) => {
+        if (!isTouching || !conn) return;
+
+        const touch = e.touches[0];
+        const dx = (touch.clientX - lastTouchX) * sensitivity;
+        const dy = (touch.clientY - lastTouchY) * sensitivity;
+
+        lastTouchX = touch.clientX;
+        lastTouchY = touch.clientY;
+
+        // Envia o movimento via WebRTC
+        conn.send({
+          type: 'move',
+          dx: dx,
+          dy: dy
+        });
+      });
+
+      touchpad.addEventListener('touchend', () => {
+        isTouching = false;
+        // Se for um toque rápido (menos de 150ms), registra como clique
+        if (Date.now() - touchStartTime < 150) {
+          sendClick();
+        }
+      });
+
+      function sendClick() {
+        if (conn && conn.open) {
+          conn.send({ type: 'click' });
+          if (navigator.vibrate) navigator.vibrate(30); // Feedback tátil
+        }
+      }
+
+      btnLeft.addEventListener('click', sendClick);
+      btnRight.addEventListener('click', sendClick);
+    }
+  </script>
+</body>
+</html>
