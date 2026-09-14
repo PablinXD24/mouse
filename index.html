@@ -206,7 +206,6 @@
       border-color: #10b981;
     }
 
-    /* Campo para teste de digitação no Desktop */
     .type-test-input {
       width: 100%;
       padding: 0.9rem 1.2rem;
@@ -354,8 +353,8 @@
     .keyboard-bar {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.8rem 1.1rem;
+      gap: 0.4rem;
+      padding: 0.8rem 1rem;
       background: rgba(0, 0, 0, 0.4);
       border-bottom: 1px solid var(--card-border);
       animation: fadeIn 0.2s ease-out;
@@ -368,12 +367,13 @@
 
     .keyboard-input-field {
       flex: 1;
-      padding: 0.65rem 1rem;
+      min-width: 0;
+      padding: 0.65rem 0.9rem;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--card-border);
       border-radius: 16px;
       color: var(--text-primary);
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       outline: none;
       user-select: auto;
       -webkit-user-select: auto;
@@ -384,13 +384,27 @@
     }
 
     .keyboard-action-btn {
-      padding: 0.65rem 0.9rem;
+      padding: 0.65rem 0.8rem;
       background: var(--btn-bg);
       border: 1px solid var(--card-border);
       color: var(--text-primary);
       border-radius: 16px;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+
+    .keyboard-action-btn:active {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #f87171;
+    }
+
+    .keyboard-action-btn.send-btn:active {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: var(--accent-color);
+      color: var(--accent-color);
     }
 
     /* Área Central Touch */
@@ -484,7 +498,7 @@
       background: var(--accent-color);
     }
 
-    /* Rodapé do Quadrado (Botões Segmentados) */
+    /* Rodapé do Quadrado */
     .square-footer-buttons {
       display: grid;
       grid-template-columns: 1.2fr 0.8fr 1.2fr;
@@ -597,10 +611,11 @@
         </div>
       </div>
 
-      <!-- Barra de Teclado Flutuante -->
+      <!-- Barra de Teclado Flutuante com Botão de Limpar -->
       <div id="keyboard-bar" class="keyboard-bar hidden">
         <input type="text" id="controller-keyboard-input" class="keyboard-input-field" placeholder="Digite no celular..." autocomplete="off" autocorrect="on" />
-        <button id="btn-send-enter" class="keyboard-action-btn">Enter ↵</button>
+        <button id="btn-clear-text" class="keyboard-action-btn">🗑️ Limpar</button>
+        <button id="btn-send-enter" class="keyboard-action-btn send-btn">Enter ↵</button>
       </div>
 
       <!-- Corpo Interno (Superfície Touch / Gestos) -->
@@ -733,7 +748,7 @@
           else if (data.type === 'scroll') {
             scrollElementUnderCursor(currentX, currentY, data.deltaY);
           }
-          /* DIGITAÇÃO PROCESSADA NO DESKTOP */
+          /* DIGITAÇÃO E LIMPEZA PROCESSADOS NO DESKTOP */
           else if (data.type === 'keyboard') {
             handleKeyboardInput(data);
           }
@@ -751,11 +766,11 @@
         });
       });
 
-      /* Função de Inserção de Texto Precisa no Computador */
+      /* Função de Inserção / Limpeza de Texto no Computador */
       function handleKeyboardInput(data) {
         let activeEl = document.activeElement;
 
-        // Tenta focar o elemento editável sob o cursor virtual se o foco atual for neutro
+        // Foca elemento editável sob o cursor virtual se não houver foco ativo
         if (!activeEl || activeEl === document.body || activeEl === document.documentElement) {
           const elAtCursor = document.elementFromPoint(currentX, currentY);
           if (elAtCursor) {
@@ -767,7 +782,7 @@
           }
         }
 
-        // Campo de teste padrão caso nenhum outro esteja focado
+        // Usa o campo de teste padrão caso nenhum esteja focado
         if (!activeEl || (activeEl.tagName !== 'INPUT' && activeEl.tagName !== 'TEXTAREA' && !activeEl.isContentEditable)) {
           activeEl = document.getElementById('desktop-type-test');
           if (activeEl) activeEl.focus();
@@ -775,7 +790,18 @@
 
         if (!activeEl) return;
 
-        if (data.action === 'backspace') {
+        /* COMANDO DE LIMPAR CAMPO DE TEXTO */
+        if (data.action === 'clear') {
+          if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
+            activeEl.value = '';
+            activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+            activeEl.dispatchEvent(new Event('change', { bubbles: true }));
+          } else if (activeEl.isContentEditable) {
+            activeEl.textContent = '';
+          }
+          logAction('Texto do campo limpo completamente.');
+        }
+        else if (data.action === 'backspace') {
           if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
             const start = activeEl.selectionStart;
             const end = activeEl.selectionEnd;
@@ -877,7 +903,6 @@
           });
           element.dispatchEvent(mouseEvt);
 
-          // Ao clicar em um elemento editável, foca nele imediatamente
           if (eventName === 'click') {
             const targetInput = element.closest('input, textarea, [contenteditable="true"]');
             if (targetInput) {
@@ -920,6 +945,7 @@
       const btnToggleKeyboard = document.getElementById('btn-toggle-keyboard');
       const keyboardBar = document.getElementById('keyboard-bar');
       const keyboardInput = document.getElementById('controller-keyboard-input');
+      const btnClearText = document.getElementById('btn-clear-text');
       const btnSendEnter = document.getElementById('btn-send-enter');
 
       const btnLeft = document.getElementById('btn-left-click');
@@ -1012,7 +1038,7 @@
         });
       }
 
-      /* DIGITAÇÃO ROBUSTA COM CORREÇÃO AUTOMÁTICA */
+      /* LÓGICA DE TECLADO E LIMPEZA DE TEXTO */
       btnToggleKeyboard.addEventListener('click', () => {
         keyboardBar.classList.toggle('hidden');
         btnToggleKeyboard.classList.toggle('active');
@@ -1022,12 +1048,11 @@
       });
 
       let lastValue = '';
-      keyboardInput.addEventListener('input', (e) => {
+      keyboardInput.addEventListener('input', () => {
         if (!conn || !conn.open) return;
 
         const currentValue = keyboardInput.value;
 
-        // Se o tamanho for igual mas o conteúdo mudou (autocorretor), apaga o anterior e envia o novo
         if (currentValue.length === lastValue.length && currentValue !== lastValue) {
           for (let i = 0; i < lastValue.length; i++) {
             conn.send({ type: 'keyboard', action: 'backspace' });
@@ -1055,6 +1080,16 @@
           keyboardInput.value = '';
           lastValue = '';
         }
+      });
+
+      /* BOTÃO DE LIMPAR TEXTO (LIMPA NO CELULAR E NO COMPUTADOR) */
+      btnClearText.addEventListener('click', () => {
+        keyboardInput.value = '';
+        lastValue = '';
+        if (conn && conn.open) {
+          conn.send({ type: 'keyboard', action: 'clear' });
+        }
+        vibrate(25);
       });
 
       btnSendEnter.addEventListener('click', () => {
@@ -1097,7 +1132,7 @@
       let touchStartTime = 0;
 
       touchSurface.addEventListener('touchstart', (e) => {
-        if (e.target === scrollStrip || e.target === btnSensors || e.target === keyboardInput) return;
+        if (e.target === scrollStrip || e.target === btnSensors || e.target === keyboardInput || e.target === btnClearText || e.target === btnSendEnter) return;
 
         touchStartTime = Date.now();
         const touchX = e.touches[0].clientX;
@@ -1113,7 +1148,7 @@
       });
 
       touchSurface.addEventListener('touchend', (e) => {
-        if (e.target === scrollStrip || e.target === btnSensors || e.target === keyboardInput) return;
+        if (e.target === scrollStrip || e.target === btnSensors || e.target === keyboardInput || e.target === btnClearText || e.target === btnSendEnter) return;
 
         clearTimeout(dragTimer);
 
