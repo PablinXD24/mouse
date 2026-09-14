@@ -218,6 +218,8 @@
       font-size: 0.95rem;
       outline: none;
       transition: border-color 0.2s;
+      user-select: auto;
+      -webkit-user-select: auto;
     }
 
     .type-test-input:focus {
@@ -237,7 +239,6 @@
       line-height: 1.6;
     }
 
-    /* Scrollbar minimalista */
     .scroll-test-area::-webkit-scrollbar, .desktop-content::-webkit-scrollbar {
       width: 6px;
     }
@@ -367,8 +368,8 @@
 
     .keyboard-input-field {
       flex: 1;
-      padding: 0.6rem 1rem;
-      background: rgba(255, 255, 255, 0.06);
+      padding: 0.65rem 1rem;
+      background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--card-border);
       border-radius: 16px;
       color: var(--text-primary);
@@ -383,7 +384,7 @@
     }
 
     .keyboard-action-btn {
-      padding: 0.6rem 0.9rem;
+      padding: 0.65rem 0.9rem;
       background: var(--btn-bg);
       border: 1px solid var(--card-border);
       color: var(--text-primary);
@@ -550,9 +551,9 @@
       <section class="interactive-zone">
         <h2>Área de Testes do Mouse & Teclado</h2>
 
-        <h3 style="margin-top: 1rem;">Teste de Digitação Rápida:</h3>
-        <input type="text" id="desktop-type-test" class="type-test-input" placeholder="Clique aqui ou aperte ⌨️ no celular para digitar..." />
-        
+        <h3 style="margin-top: 1rem;">Campo de Teste de Digitação Rápida:</h3>
+        <input type="text" id="desktop-type-test" class="type-test-input" placeholder="Aperte ⌨️ no celular para digitar aqui..." />
+
         <div class="card-grid">
           <button class="test-btn" onclick="highlightCard(this, 'Clique Comum (Lado Direito)')">Botão 1 (Clique Comum)</button>
           <button class="test-btn" oncontextmenu="highlightCard(this, 'Clique Secundário (Lado Esquerdo)'); return false;">Botão 2 (Menu Contexto)</button>
@@ -598,7 +599,7 @@
 
       <!-- Barra de Teclado Flutuante -->
       <div id="keyboard-bar" class="keyboard-bar hidden">
-        <input type="text" id="controller-keyboard-input" class="keyboard-input-field" placeholder="Digite para enviar ao PC..." autocomplete="off" />
+        <input type="text" id="controller-keyboard-input" class="keyboard-input-field" placeholder="Digite no celular..." autocomplete="off" autocorrect="on" />
         <button id="btn-send-enter" class="keyboard-action-btn">Enter ↵</button>
       </div>
 
@@ -729,11 +730,10 @@
           else if (data.type === 'middleclick') {
             triggerMouseEvent('auxclick', currentX, currentY, { button: 1 });
           }
-          /* DETECÇÃO INTELIGENTE DE ROLAGEM UNIVERSAL */
           else if (data.type === 'scroll') {
             scrollElementUnderCursor(currentX, currentY, data.deltaY);
           }
-          /* PROCESSAMENTO DE DIGITAÇÃO E TECLADO */
+          /* DIGITAÇÃO PROCESSADA NO DESKTOP */
           else if (data.type === 'keyboard') {
             handleKeyboardInput(data);
           }
@@ -751,20 +751,23 @@
         });
       });
 
-      /* Função para processar entrada de texto no Desktop */
+      /* Função de Inserção de Texto Precisa no Computador */
       function handleKeyboardInput(data) {
         let activeEl = document.activeElement;
 
-        // Se nenhum elemento estiver em foco, busca o elemento sob o cursor virtual
-        if (!activeEl || activeEl === document.body) {
+        // Tenta focar o elemento editável sob o cursor virtual se o foco atual for neutro
+        if (!activeEl || activeEl === document.body || activeEl === document.documentElement) {
           const elAtCursor = document.elementFromPoint(currentX, currentY);
-          if (elAtCursor && (elAtCursor.tagName === 'INPUT' || elAtCursor.tagName === 'TEXTAREA' || elAtCursor.isContentEditable)) {
-            activeEl = elAtCursor;
-            activeEl.focus();
+          if (elAtCursor) {
+            const targetInput = elAtCursor.closest('input, textarea, [contenteditable="true"]');
+            if (targetInput) {
+              activeEl = targetInput;
+              activeEl.focus();
+            }
           }
         }
 
-        // Se ainda assim não houver campo editável, usa o campo de teste padrão
+        // Campo de teste padrão caso nenhum outro esteja focado
         if (!activeEl || (activeEl.tagName !== 'INPUT' && activeEl.tagName !== 'TEXTAREA' && !activeEl.isContentEditable)) {
           activeEl = document.getElementById('desktop-type-test');
           if (activeEl) activeEl.focus();
@@ -774,21 +777,54 @@
 
         if (data.action === 'backspace') {
           if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
-            activeEl.value = activeEl.value.slice(0, -1);
+            const start = activeEl.selectionStart;
+            const end = activeEl.selectionEnd;
+            if (start !== null && end !== null) {
+              if (start !== end) {
+                activeEl.setRangeText('', start, end, 'end');
+              } else if (start > 0) {
+                activeEl.setRangeText('', start - 1, start, 'end');
+              }
+            } else {
+              activeEl.value = activeEl.value.slice(0, -1);
+            }
             activeEl.dispatchEvent(new Event('input', { bubbles: true }));
-          }
-        } else if (data.action === 'enter') {
-          const enterEvt = new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13, bubbles: true });
-          activeEl.dispatchEvent(enterEvt);
-          logAction('Tecla Enter enviada.');
-        } else if (data.text !== undefined) {
-          if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
-            activeEl.value += data.text;
-            activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+            activeEl.dispatchEvent(new Event('change', { bubbles: true }));
           } else if (activeEl.isContentEditable) {
-            document.execCommand('insertText', false, data.text);
+            document.execCommand('delete', false, null);
           }
+          logAction('Backspace executado');
+        } 
+        else if (data.action === 'enter') {
+          const enterEvtDown = new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true });
+          const enterEvtUp = new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true });
+          activeEl.dispatchEvent(enterEvtDown);
+          activeEl.dispatchEvent(enterEvtUp);
+
+          if (activeEl.tagName === 'TEXTAREA') {
+            insertTextIntoElement(activeEl, '\n');
+          }
+          logAction('Tecla Enter acionada');
+        } 
+        else if (data.text !== undefined) {
+          insertTextIntoElement(activeEl, data.text);
           logAction(`Texto digitado: "${data.text}"`);
+        }
+      }
+
+      function insertTextIntoElement(activeEl, text) {
+        if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
+          const start = activeEl.selectionStart;
+          const end = activeEl.selectionEnd;
+          if (start !== null && end !== null && typeof activeEl.setRangeText === 'function') {
+            activeEl.setRangeText(text, start, end, 'end');
+          } else {
+            activeEl.value += text;
+          }
+          activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+          activeEl.dispatchEvent(new Event('change', { bubbles: true }));
+        } else if (activeEl.isContentEditable) {
+          document.execCommand('insertText', false, text);
         }
       }
 
@@ -816,7 +852,6 @@
           if (isScrollable) {
             const initialScrollTop = el.scrollTop;
             el.scrollBy({ top: deltaY, behavior: 'instant' });
-            
             if (el.scrollTop !== initialScrollTop) return;
           }
           el = el.parentElement;
@@ -841,8 +876,15 @@
             ...extraInit
           });
           element.dispatchEvent(mouseEvt);
-          if (eventName === 'click' && typeof element.click === 'function') {
-            element.click();
+
+          // Ao clicar em um elemento editável, foca nele imediatamente
+          if (eventName === 'click') {
+            const targetInput = element.closest('input, textarea, [contenteditable="true"]');
+            if (targetInput) {
+              targetInput.focus();
+            } else if (typeof element.click === 'function') {
+              element.click();
+            }
           }
         }
       }
@@ -970,7 +1012,7 @@
         });
       }
 
-      /* LÓGICA DO TECLADO NO CELULAR */
+      /* DIGITAÇÃO ROBUSTA COM CORREÇÃO AUTOMÁTICA */
       btnToggleKeyboard.addEventListener('click', () => {
         keyboardBar.classList.toggle('hidden');
         btnToggleKeyboard.classList.toggle('active');
@@ -979,20 +1021,31 @@
         }
       });
 
-      let lastInputValue = '';
+      let lastValue = '';
       keyboardInput.addEventListener('input', (e) => {
         if (!conn || !conn.open) return;
 
-        const val = keyboardInput.value;
-        if (val.length < lastInputValue.length) {
-          // Apagou caractere
-          conn.send({ type: 'keyboard', action: 'backspace' });
-        } else if (val.length > lastInputValue.length) {
-          // Adicionou caractere(s)
-          const addedText = val.slice(lastInputValue.length);
-          conn.send({ type: 'keyboard', text: addedText });
+        const currentValue = keyboardInput.value;
+
+        // Se o tamanho for igual mas o conteúdo mudou (autocorretor), apaga o anterior e envia o novo
+        if (currentValue.length === lastValue.length && currentValue !== lastValue) {
+          for (let i = 0; i < lastValue.length; i++) {
+            conn.send({ type: 'keyboard', action: 'backspace' });
+          }
+          conn.send({ type: 'keyboard', text: currentValue });
+        } 
+        else if (currentValue.length < lastValue.length) {
+          const diffLength = lastValue.length - currentValue.length;
+          for (let i = 0; i < diffLength; i++) {
+            conn.send({ type: 'keyboard', action: 'backspace' });
+          }
+        } 
+        else if (currentValue.length > lastValue.length) {
+          const added = currentValue.slice(lastValue.length);
+          conn.send({ type: 'keyboard', text: added });
         }
-        lastInputValue = val;
+
+        lastValue = currentValue;
       });
 
       keyboardInput.addEventListener('keydown', (e) => {
@@ -1000,14 +1053,14 @@
           e.preventDefault();
           if (conn && conn.open) conn.send({ type: 'keyboard', action: 'enter' });
           keyboardInput.value = '';
-          lastInputValue = '';
+          lastValue = '';
         }
       });
 
       btnSendEnter.addEventListener('click', () => {
         if (conn && conn.open) conn.send({ type: 'keyboard', action: 'enter' });
         keyboardInput.value = '';
-        lastInputValue = '';
+        lastValue = '';
         vibrate(25);
       });
 
