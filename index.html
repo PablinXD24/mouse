@@ -56,7 +56,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      pointer-events: none; /* Permite clicar nos elementos que estão por baixo */
+      pointer-events: none;
       z-index: 9999;
       box-shadow: 0 0 15px rgba(56, 189, 248, 0.8);
       transition: transform 0.05s ease-out;
@@ -156,13 +156,14 @@
     }
 
 
-    /* ================= ESTILOS CELULAR (CONTROLLER) ================= */
+    /* ================= ESTILOS CELULAR (CONTROLLER - AIR MOUSE) ================= */
     #controller-view {
       display: flex;
       flex-direction: column;
       height: 100vh;
-      padding: 1rem;
-      touch-action: none; /* Impede rolagem de página ao arrastar o dedo */
+      padding: 1.5rem;
+      touch-action: none;
+      gap: 1rem;
     }
 
     .controller-header {
@@ -172,52 +173,50 @@
       color: var(--accent-color);
     }
 
-    #touchpad {
+    .air-zone {
       flex: 1;
       background: var(--card-bg);
-      border: 2px dashed rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(56, 189, 248, 0.3);
       border-radius: 16px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin: 1rem 0;
-      position: relative;
-    }
-
-    .touchpad-hint {
-      color: #64748b;
-      pointer-events: none;
+      gap: 1rem;
+      padding: 1rem;
       text-align: center;
     }
 
-    .mouse-buttons {
-      display: flex;
-      gap: 1rem;
-      height: 80px;
-    }
-
-    .click-btn {
-      flex: 1;
+    .action-btn {
+      width: 100%;
+      padding: 1rem;
       background: var(--btn-color);
       color: white;
       border: none;
       border-radius: 12px;
       font-size: 1.1rem;
       font-weight: bold;
+      cursor: pointer;
       touch-action: manipulation;
+      transition: background 0.2s;
     }
 
-    .click-btn.secondary {
+    .action-btn.secondary {
       background: #475569;
     }
 
-    .click-btn:active {
+    .action-btn:active {
       opacity: 0.8;
       transform: scale(0.98);
     }
 
+    .mouse-buttons {
+      display: flex;
+      gap: 1rem;
+      height: 90px;
+    }
+
     .sensitivity-control {
-      margin-top: 1rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -229,24 +228,21 @@
 
   <!-- ================= VISTA DO DESKTOP (HOST) ================= -->
   <div id="host-view" class="view hidden">
-    <!-- Cursor Virtual na tela do PC -->
     <div id="virtual-cursor"></div>
 
-    <!-- Modal com o QR Code -->
     <div id="qr-modal" class="modal">
       <div class="modal-card">
         <h2>Conecte seu Celular</h2>
-        <p>Escaneie o QR Code abaixo para usar seu celular como mouse:</p>
+        <p>Escaneie o QR Code abaixo para usar seu celular como Air Mouse:</p>
         <div id="qrcode"></div>
         <div id="status-badge" class="badge">Aguardando Conexão...</div>
       </div>
     </div>
 
-    <!-- Interface Interativa de Teste no PC -->
     <main class="desktop-content">
       <header>
         <h1>Air Mouse Interface</h1>
-        <p>Mova o dedo no celular para controlar o cursor abaixo!</p>
+        <p>Incline e incline seu celular para controlar o cursor na tela!</p>
       </header>
 
       <section class="interactive-zone">
@@ -262,27 +258,30 @@
   </div>
 
 
-  <!-- ================= VISTA DO CELULAR (CONTROLLER) ================= -->
+  <!-- ================= VISTA DO CELULAR (AIR MOUSE) ================= -->
   <div id="controller-view" class="view hidden">
     <div class="controller-header">
       <span id="controller-status">Conectando ao PC...</span>
     </div>
 
-    <!-- ÁREA DO TRACKPAD -->
-    <div id="touchpad">
-      <div class="touchpad-hint">Deslize o dedo aqui para mover o cursor</div>
+    <div class="air-zone">
+      <p id="sensor-instructions">Incline o celular para mover o ponteiro no PC</p>
+      
+      <!-- Botão para solicitar permissão do giroscópio (Obrigatório em iOS/Safari) -->
+      <button id="btn-enable-sensors" class="action-btn">Ativar Giroscópio</button>
+      <button id="btn-recalibrate" class="action-btn secondary hidden">Centralizar / Recalibrar</button>
     </div>
 
     <!-- BOTÕES DO MOUSE -->
     <div class="mouse-buttons">
-      <button id="btn-left-click" class="click-btn">Clique Esquerdo</button>
-      <button id="btn-right-click" class="click-btn secondary">Clique Direito</button>
+      <button id="btn-left-click" class="action-btn">Clique Esquerdo</button>
+      <button id="btn-right-click" class="action-btn secondary">Clique Direito</button>
     </div>
 
     <!-- CONTROLE DE SENSIBILIDADE -->
     <div class="sensitivity-control">
       <label for="sens-slider">Sensibilidade:</label>
-      <input type="range" id="sens-slider" min="0.5" max="4" step="0.5" value="2">
+      <input type="range" id="sens-slider" min="0.5" max="5" step="0.5" value="2.5">
     </div>
   </div>
 
@@ -292,10 +291,8 @@
       const roomId = urlParams.get('room');
 
       if (roomId) {
-        // Se houver o parâmetro 'room' na URL, o dispositivo é o CELULAR
         initControllerMode(roomId);
       } else {
-        // Se não houver o parâmetro, o dispositivo é o COMPUTADOR (HOST)
         initHostMode();
       }
     });
@@ -314,14 +311,10 @@
       let cursorY = window.innerHeight / 2;
       updateCursorPosition();
 
-      // Cria a sala P2P com PeerJS
       const peer = new Peer();
 
       peer.on('open', (id) => {
-        // URL que será gerada no QR Code contendo o ID da sala
         const connectionUrl = `${window.location.origin}${window.location.pathname}?room=${id}`;
-
-        // Renderiza o QR Code
         new QRCode(document.getElementById('qrcode'), {
           text: connectionUrl,
           width: 180,
@@ -329,7 +322,6 @@
         });
       });
 
-      // Aguarda o celular se conectar
       peer.on('connection', (conn) => {
         statusBadge.textContent = "Conectado!";
         statusBadge.classList.add('connected');
@@ -338,13 +330,12 @@
           qrModal.style.display = 'none';
         }, 800);
 
-        // Ouve as mensagens do celular em tempo real
         conn.on('data', (data) => {
           if (data.type === 'move') {
             cursorX += data.dx;
             cursorY += data.dy;
 
-            // Mantém o cursor dentro dos limites da tela
+            // Mantém dentro dos limites da tela
             cursorX = Math.max(0, Math.min(window.innerWidth, cursorX));
             cursorY = Math.max(0, Math.min(window.innerHeight, cursorY));
 
@@ -371,7 +362,6 @@
         cursor.classList.add('active');
         setTimeout(() => cursor.classList.remove('active'), 150);
 
-        // Encontra o elemento na coordenada exata e simula o clique
         const element = document.elementFromPoint(x, y);
         if (element) {
           element.click();
@@ -379,7 +369,6 @@
       }
     }
 
-    /* Função utilitária do botão de teste */
     function highlightCard(buttonElement) {
       const log = document.getElementById('feedback-log');
       log.textContent = `Você clicou no: ${buttonElement.textContent} às ${new Date().toLocaleTimeString()}`;
@@ -389,13 +378,14 @@
 
 
     /* ==========================================================================
-       MODO CONTROLLER (CELULAR)
+       MODO CONTROLLER (GIROSCÓPIO / AIR MOUSE)
        ========================================================================== */
     function initControllerMode(targetRoomId) {
       document.getElementById('controller-view').classList.remove('hidden');
 
       const statusEl = document.getElementById('controller-status');
-      const touchpad = document.getElementById('touchpad');
+      const btnSensors = document.getElementById('btn-enable-sensors');
+      const btnRecalibrate = document.getElementById('btn-recalibrate');
       const btnLeft = document.getElementById('btn-left-click');
       const btnRight = document.getElementById('btn-right-click');
       const sensSlider = document.getElementById('sens-slider');
@@ -403,11 +393,16 @@
       let sensitivity = parseFloat(sensSlider.value);
       let conn = null;
 
+      // Variáveis do sensor
+      let lastGamma = null; // Ângulo YAW / ROLL (Inclinação Lateral -> Eixo X)
+      let lastBeta = null;  // Ângulo PITCH (Inclinação Frontal -> Eixo Y)
+      let sensorsActive = false;
+
       sensSlider.addEventListener('input', (e) => {
         sensitivity = parseFloat(e.target.value);
       });
 
-      // Conecta ao ID transmitido pela URL do QR Code
+      // Conexão WebRTC
       const peer = new Peer();
 
       peer.on('open', () => {
@@ -424,50 +419,76 @@
         });
       });
 
-      /* Captura de gestos no Touchpad */
-      let lastTouchX = 0;
-      let lastTouchY = 0;
-      let isTouching = false;
-      let touchStartTime = 0;
-
-      touchpad.addEventListener('touchstart', (e) => {
-        isTouching = true;
-        touchStartTime = Date.now();
-        const touch = e.touches[0];
-        lastTouchX = touch.clientX;
-        lastTouchY = touch.clientY;
-      });
-
-      touchpad.addEventListener('touchmove', (e) => {
-        if (!isTouching || !conn) return;
-
-        const touch = e.touches[0];
-        const dx = (touch.clientX - lastTouchX) * sensitivity;
-        const dy = (touch.clientY - lastTouchY) * sensitivity;
-
-        lastTouchX = touch.clientX;
-        lastTouchY = touch.clientY;
-
-        // Envia o movimento via WebRTC
-        conn.send({
-          type: 'move',
-          dx: dx,
-          dy: dy
-        });
-      });
-
-      touchpad.addEventListener('touchend', () => {
-        isTouching = false;
-        // Se for um toque rápido (menos de 150ms), registra como clique
-        if (Date.now() - touchStartTime < 150) {
-          sendClick();
+      /* Ativação de Sensores com permissão iOS/Android */
+      btnSensors.addEventListener('click', async () => {
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          try {
+            const permissionState = await DeviceOrientationEvent.requestPermission();
+            if (permissionState === 'granted') {
+              startGyroscope();
+            } else {
+              alert('Permissão para acessar os sensores foi negada.');
+            }
+          } catch (error) {
+            console.error(error);
+          }
+        } else {
+          // Navegadores padrão sem necessidade de permissão explícita
+          startGyroscope();
         }
       });
 
+      btnRecalibrate.addEventListener('click', () => {
+        lastGamma = null;
+        lastBeta = null;
+      });
+
+      function startGyroscope() {
+        sensorsActive = true;
+        btnSensors.classList.add('hidden');
+        btnRecalibrate.classList.remove('hidden');
+
+        window.addEventListener('deviceorientation', handleOrientation);
+      }
+
+      function handleOrientation(event) {
+        if (!sensorsActive || !conn || !conn.open) return;
+
+        const gamma = event.gamma; // [-90, 90] inclinação esquerda/direita
+        const beta = event.beta;   // [-180, 180] inclinação frente/trás
+
+        if (lastGamma === null || lastBeta === null) {
+          lastGamma = gamma;
+          lastBeta = beta;
+          return;
+        }
+
+        // Calcula a variação de ângulo
+        let deltaX = (gamma - lastGamma) * sensitivity;
+        let deltaY = (beta - lastBeta) * sensitivity;
+
+        // Atualiza a referência
+        lastGamma = gamma;
+        lastBeta = beta;
+
+        // Filtro de ruído mínimo (Deadzone para evitar tremedeira da mão)
+        if (Math.abs(deltaX) < 0.2) deltaX = 0;
+        if (Math.abs(deltaY) < 0.2) deltaY = 0;
+
+        if (deltaX !== 0 || deltaY !== 0) {
+          conn.send({
+            type: 'move',
+            dx: deltaX,
+            dy: deltaY
+          });
+        }
+      }
+
+      /* Envio de Cliques */
       function sendClick() {
         if (conn && conn.open) {
           conn.send({ type: 'click' });
-          if (navigator.vibrate) navigator.vibrate(30); // Feedback tátil
+          if (navigator.vibrate) navigator.vibrate(30);
         }
       }
 
