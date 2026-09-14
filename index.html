@@ -3,19 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Air Mouse - Laser Pointer Remote</title>
+  <title>Air Mouse Pro - Remote Control</title>
 
-  <!-- CDNs (QRCode e PeerJS para WebRTC) -->
+  <!-- CDNs (QRCode.js e PeerJS) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
   <style>
     :root {
-      --bg-color: #0f172a;
-      --card-bg: #1e293b;
+      --bg-color: #0b0f19;
+      --card-bg: #151d30;
       --accent-color: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.4);
       --text-color: #f8fafc;
-      --btn-color: #2563eb;
+      --text-muted: #94a3b8;
+      --btn-color: #1e293b;
+      --btn-active: #2563eb;
+      --btn-border: rgba(255, 255, 255, 0.1);
     }
 
     * {
@@ -24,7 +28,7 @@
       padding: 0;
       user-select: none;
       -webkit-user-select: none;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
 
     body, html {
@@ -47,8 +51,8 @@
 
     /* ================= ESTILOS DESKTOP (HOST) ================= */
     #virtual-cursor {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       background-color: var(--accent-color);
       border: 2px solid #ffffff;
       border-radius: 50%;
@@ -58,20 +62,27 @@
       transform: translate(-50%, -50%);
       pointer-events: none;
       z-index: 9999;
-      box-shadow: 0 0 15px rgba(56, 189, 248, 0.9);
+      box-shadow: 0 0 16px var(--accent-color);
       transition: background-color 0.15s, transform 0.1s;
     }
 
     #virtual-cursor.active {
       transform: translate(-50%, -50%) scale(0.7);
       background-color: #22c55e;
+      box-shadow: 0 0 16px #22c55e;
+    }
+
+    #virtual-cursor.dragging {
+      border-radius: 4px;
+      background-color: #f59e0b;
+      box-shadow: 0 0 18px #f59e0b;
     }
 
     .modal {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(8px);
+      background: rgba(11, 15, 25, 0.9);
+      backdrop-filter: blur(10px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -80,25 +91,25 @@
 
     .modal-card {
       background: var(--card-bg);
-      padding: 2rem;
-      border-radius: 16px;
+      padding: 2.5rem;
+      border-radius: 20px;
       text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-      max-width: 360px;
+      border: 1px solid var(--btn-border);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      max-width: 380px;
     }
 
     #qrcode {
       margin: 1.5rem auto;
-      padding: 10px;
+      padding: 12px;
       background: white;
-      border-radius: 8px;
+      border-radius: 12px;
       width: max-content;
     }
 
     .badge {
       display: inline-block;
-      padding: 6px 12px;
+      padding: 6px 14px;
       background: #f59e0b;
       color: #000;
       font-weight: bold;
@@ -113,15 +124,16 @@
 
     .desktop-content {
       padding: 3rem;
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
     }
 
     .interactive-zone {
-      margin-top: 3rem;
+      margin-top: 2rem;
       background: var(--card-bg);
       padding: 2rem;
-      border-radius: 12px;
+      border-radius: 16px;
+      border: 1px solid var(--btn-border);
     }
 
     .card-grid {
@@ -132,124 +144,199 @@
 
     .test-btn {
       flex: 1;
-      padding: 1rem;
+      padding: 1.2rem;
       background: var(--btn-color);
       color: white;
-      border: none;
-      border-radius: 8px;
+      border: 1px solid var(--btn-border);
+      border-radius: 10px;
       font-size: 1rem;
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
+      transition: all 0.2s;
     }
 
     .test-btn:hover {
-      background: #1d4ed8;
+      background: var(--btn-active);
     }
 
     .test-btn.highlight {
       background: #22c55e;
     }
 
+    .scroll-test-area {
+      height: 120px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.3);
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--btn-border);
+      margin-top: 1rem;
+    }
+
     #feedback-log {
-      color: #94a3b8;
+      color: var(--text-muted);
       font-style: italic;
+      margin-top: 1rem;
     }
 
 
-    /* ================= ESTILOS CELULAR (LASER POINTER) ================= */
+    /* ================= ESTILOS CELULAR (AIR MOUSE CONTROLLER) ================= */
     #controller-view {
       display: flex;
       flex-direction: column;
       height: 100vh;
-      padding: 1.2rem;
-      touch-action: none;
+      padding: 1rem;
       gap: 0.8rem;
+      background: var(--bg-color);
     }
 
     .controller-header {
-      text-align: center;
-      padding: 0.3rem;
-      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.4rem 0.8rem;
+      background: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--btn-border);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
       color: var(--accent-color);
     }
 
-    .pointer-zone {
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #f59e0b;
+      border-radius: 50%;
+    }
+
+    .status-dot.online {
+      background-color: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    /* Botões Auxiliares e Calibragem */
+    .top-tools {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr 1fr;
+      gap: 0.6rem;
+    }
+
+    .tool-btn {
+      padding: 0.8rem;
+      background: var(--card-bg);
+      color: var(--text-color);
+      border: 1px solid var(--btn-border);
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+
+    .tool-btn.center-btn {
+      background: var(--btn-active);
+      border-color: rgba(56, 189, 248, 0.5);
+    }
+
+    /* Área Central com Roda de Scroll e Touch */
+    .middle-section {
+      flex: 1;
+      display: flex;
+      gap: 0.8rem;
+      min-height: 0;
+    }
+
+    .scroll-strip {
+      width: 60px;
+      background: var(--card-bg);
+      border: 1px solid var(--btn-border);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 0;
+      color: var(--text-muted);
+      touch-action: none;
+    }
+
+    .scroll-strip-active {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    .pointer-info-zone {
       flex: 1;
       background: var(--card-bg);
-      border: 2px dashed rgba(56, 189, 248, 0.4);
+      border: 1px dashed var(--btn-border);
       border-radius: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 1rem;
-      padding: 1.2rem;
+      gap: 0.8rem;
+      padding: 1rem;
       text-align: center;
     }
 
-    .remote-icon {
-      font-size: 2.8rem;
+    /* Painel Principal de Botões do Mouse */
+    .mouse-main-buttons {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr 1.2fr;
+      gap: 0.6rem;
+      height: 140px;
     }
 
-    .action-btn {
-      width: 100%;
-      padding: 1.2rem;
-      background: var(--btn-color);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.1rem;
-      font-weight: bold;
-      cursor: pointer;
-      touch-action: manipulation;
-    }
-
-    .action-btn.recalibrate-btn {
-      background: #eab308;
-      color: #000;
-    }
-
-    .action-btn.secondary {
-      background: #475569;
-    }
-
-    .action-btn:active {
-      opacity: 0.8;
-      transform: scale(0.98);
-    }
-
-    .mouse-buttons {
-      display: flex;
-      gap: 1rem;
-      height: 90px;
-    }
-
-    .controls-panel {
+    .m-btn {
       background: var(--card-bg);
+      color: var(--text-color);
+      border: 1px solid var(--btn-border);
+      border-radius: 14px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      touch-action: none;
+      transition: background 0.1s, transform 0.05s;
+    }
+
+    .m-btn:active, .m-btn.pressed {
+      background: var(--btn-active);
+      border-color: var(--accent-color);
+      transform: scale(0.97);
+    }
+
+    .m-btn-subtext {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: normal;
+    }
+
+    /* Painel Inferior de Sensibilidade */
+    .bottom-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--btn-border);
       padding: 0.8rem 1rem;
       border-radius: 12px;
       display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-      font-size: 0.9rem;
-    }
-
-    .control-row {
-      display: flex;
       align-items: center;
       justify-content: space-between;
+      font-size: 0.85rem;
     }
 
-    .checkbox-group {
-      display: flex;
-      gap: 1rem;
-    }
-
-    .checkbox-group label {
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      cursor: pointer;
+    .bottom-panel input[type="range"] {
+      width: 50%;
     }
   </style>
 </head>
@@ -257,69 +344,116 @@
 
   <!-- ================= VISTA DO DESKTOP (HOST) ================= -->
   <div id="host-view" class="view hidden">
+    <!-- Cursor Virtual na tela do PC -->
     <div id="virtual-cursor"></div>
 
+    <!-- Modal com o QR Code -->
     <div id="qr-modal" class="modal">
       <div class="modal-card">
-        <h2>Conecte seu Celular</h2>
-        <p>Escaneie o QR Code abaixo para usar seu celular como Ponteiro Laser:</p>
+        <h2>Air Mouse Pro</h2>
+        <p style="color: var(--text-muted); margin-top: 0.5rem;">Escaneie para conectar seu smartphone como mouse completo:</p>
         <div id="qrcode"></div>
         <div id="status-badge" class="badge">Aguardando Conexão...</div>
       </div>
     </div>
 
+    <!-- Interface Principal de Testes -->
     <main class="desktop-content">
       <header>
-        <h1>Air Laser Pointer</h1>
-        <p>Aponte a ponta do celular para a tela como uma caneta laser!</p>
+        <h1>Air Mouse Pro Desktop</h1>
+        <p style="color: var(--text-muted);">Controle todas as funções de mouse diretamente pelo seu celular.</p>
       </header>
 
       <section class="interactive-zone">
-        <h2>Área de Teste de Clique</h2>
+        <h2>Área de Testes do Mouse</h2>
+        
         <div class="card-grid">
-          <button class="test-btn" onclick="highlightCard(this)">Botão 1</button>
-          <button class="test-btn" onclick="highlightCard(this)">Botão 2</button>
-          <button class="test-btn" onclick="highlightCard(this)">Botão 3</button>
+          <button class="test-btn" onclick="highlightCard(this, 'Clique Esquerdo')">Botão 1 (Clique)</button>
+          <button class="test-btn" oncontextmenu="highlightCard(this, 'Clique Direito'); return false;">Botão 2 (Menu Contexto)</button>
+          <button class="test-btn" onauxclick="highlightCard(this, 'Clique Central / M3')">Botão 3 (M3)</button>
         </div>
-        <div id="feedback-log">Nenhum botão clicado ainda.</div>
+
+        <h3>Teste de Rolagem (Scroll Wheel):</h3>
+        <div class="scroll-test-area">
+          <p>1. Role a barra lateral no celular...</p>
+          <p>2. Linha de teste de rolagem...</p>
+          <p>3. Continue rolando...</p>
+          <p>4. Teste de scroll vertical...</p>
+          <p>5. Mais conteúdo aqui...</p>
+          <p>6. Quase no fim do bloco de scroll!</p>
+          <p>7. Fim da área de teste.</p>
+        </div>
+
+        <div id="feedback-log">Nenhuma ação registrada ainda.</div>
       </section>
     </main>
   </div>
 
 
-  <!-- ================= VISTA DO CELULAR (POINTER CONTROLLER) ================= -->
+  <!-- ================= VISTA DO CELULAR (CONTROLLER) ================= -->
   <div id="controller-view" class="view hidden">
+    <!-- Header de Status -->
     <div class="controller-header">
-      <span id="controller-status">Conectando ao PC...</span>
-    </div>
-
-    <div class="pointer-zone">
-      <div class="remote-icon">🎯📱</div>
-      <p id="instruction-text">Aponte a <b>ponta do celular</b> para o centro da tela do computador e toque no botão abaixo.</p>
-      
-      <button id="btn-enable-sensors" class="action-btn">Ativar Sensores</button>
-      <button id="btn-calibrate" class="action-btn recalibrate-btn hidden">🎯 Centralizar Mira</button>
-    </div>
-
-    <!-- BOTÕES DE CLIQUE -->
-    <div class="mouse-buttons">
-      <button id="btn-left-click" class="action-btn">Clique Esquerdo</button>
-      <button id="btn-right-click" class="action-btn secondary">Clique Direito</button>
-    </div>
-
-    <!-- PAINEL DE AJUSTES -->
-    <div class="controls-panel">
-      <div class="control-row">
-        <label for="sens-slider">Sensibilidade do Apontador:</label>
-        <input type="range" id="sens-slider" min="15" max="60" step="5" value="30">
+      <div class="status-indicator">
+        <div id="status-dot" class="status-dot"></div>
+        <span id="controller-status">Conectando...</span>
       </div>
-      <div class="control-row">
-        <span>Inverter Direção:</span>
-        <div class="checkbox-group">
-          <label><input type="checkbox" id="chk-invert-x"> Horizontal (X)</label>
-          <label><input type="checkbox" id="chk-invert-y"> Vertical (Y)</label>
-        </div>
+      <span style="font-size: 0.8rem; color: var(--text-muted);">Air Mouse Remote</span>
+    </div>
+
+    <!-- Ferramentas Superiores: Navegação + Mira -->
+    <div class="top-tools">
+      <button id="btn-nav-back" class="tool-btn">◀ Voltar</button>
+      <button id="btn-calibrate" class="tool-btn center-btn">🎯 Centralizar</button>
+      <button id="btn-nav-forward" class="tool-btn">Avançar ▶</button>
+    </div>
+
+    <!-- Seção Central: Sensor Status & Faixa de Scroll -->
+    <div class="middle-section">
+      <!-- Faixa Tátil de Scroll Wheel -->
+      <div id="scroll-strip" class="scroll-strip">
+        <span>▲</span>
+        <span style="writing-mode: vertical-rl; font-size: 0.75rem; letter-spacing: 2px;">SCROLL</span>
+        <span>▼</span>
       </div>
+
+      <!-- Área Visual do Ponteiro / Ativação -->
+      <div class="pointer-info-zone">
+        <div style="font-size: 2.2rem;">📱🎯</div>
+        <p id="instruction-text" style="font-size: 0.85rem; color: var(--text-muted);">
+          Aponte o topo do celular para a tela e toque em <b>Ativar Sensores</b>.
+        </p>
+        <button id="btn-enable-sensors" class="tool-btn center-btn" style="width: 100%; padding: 1rem;">
+          Ativar Sensores
+        </button>
+      </div>
+    </div>
+
+    <!-- Botões Principais do Mouse (Esquerdo, Meio, Direito) -->
+    <div class="mouse-main-buttons">
+      <!-- Botão Esquerdo (Com suporte a Segurar/Arrastar) -->
+      <button id="btn-left-click" class="m-btn">
+        <span>Clique Esquerdo</span>
+        <span class="m-btn-subtext">Segure p/ Arrastar</span>
+      </button>
+
+      <!-- Botão Central (Scroll Click / M3) -->
+      <button id="btn-middle-click" class="m-btn" style="background: rgba(255,255,255,0.03);">
+        <span>M3</span>
+        <span class="m-btn-subtext">Scroll Click</span>
+      </button>
+
+      <!-- Botão Direito -->
+      <button id="btn-right-click" class="m-btn">
+        <span>Clique Direito</span>
+        <span class="m-btn-subtext">Menu Contexto</span>
+      </button>
+    </div>
+
+    <!-- Ajuste de Sensibilidade (DPI) -->
+    <div class="bottom-panel">
+      <span>Sensibilidade (DPI):</span>
+      <input type="range" id="sens-slider" min="15" max="65" step="5" value="35">
     </div>
   </div>
 
@@ -345,13 +479,13 @@
       const statusBadge = document.getElementById('status-badge');
       const qrModal = document.getElementById('qr-modal');
 
-      // Posição alvo (recebida do celular) e Posição atual (com suavização)
       let targetX = window.innerWidth / 2;
       let targetY = window.innerHeight / 2;
       let currentX = window.innerWidth / 2;
       let currentY = window.innerHeight / 2;
+      let isMouseDown = false;
 
-      // Loop de renderização suave (Lerp) para remover tremido da mão
+      // Loop de renderização fluida do cursor (Lerp)
       function renderLoop() {
         currentX += (targetX - currentX) * 0.25;
         currentY += (targetY - currentY) * 0.25;
@@ -383,19 +517,53 @@
         }, 800);
 
         conn.on('data', (data) => {
+          /* MOVIMENTO DO PONTEIRO */
           if (data.type === 'pointer') {
-            // Calcula a posição na tela com base nos ângulos de apontamento offset
-            const sensitivity = data.sensitivity; // pixels por grau
-            
-            let posX = (window.innerWidth / 2) + (data.angleX * sensitivity * data.factorX);
-            let posY = (window.innerHeight / 2) - (data.angleY * sensitivity * data.factorY);
+            const sensitivity = data.sensitivity;
+            let posX = (window.innerWidth / 2) - (data.angleX * sensitivity);
+            let posY = (window.innerHeight / 2) - (data.angleY * sensitivity);
 
-            // Mantém o cursor dentro dos limites da tela
             targetX = Math.max(0, Math.min(window.innerWidth, posX));
             targetY = Math.max(0, Math.min(window.innerHeight, posY));
           } 
+          /* CLIQUE ESQUERDO */
           else if (data.type === 'click') {
-            triggerVirtualClick(currentX, currentY);
+            triggerMouseEvent('click', currentX, currentY);
+          }
+          /* PRESSIONAR BOTÃO ESQUERDO (INÍCIO DE DRAG) */
+          else if (data.type === 'mousedown') {
+            isMouseDown = true;
+            cursor.classList.add('dragging');
+            triggerMouseEvent('mousedown', currentX, currentY);
+          }
+          /* SOLTAR BOTÃO ESQUERDO (FIM DE DRAG) */
+          else if (data.type === 'mouseup') {
+            isMouseDown = false;
+            cursor.classList.remove('dragging');
+            triggerMouseEvent('mouseup', currentX, currentY);
+          }
+          /* CLIQUE DIREITO */
+          else if (data.type === 'rightclick') {
+            triggerMouseEvent('contextmenu', currentX, currentY);
+          }
+          /* CLIQUE CENTRAL (SCROLL CLICK) */
+          else if (data.type === 'middleclick') {
+            triggerMouseEvent('auxclick', currentX, currentY, { button: 1 });
+          }
+          /* ROLAGEM DE PÁGINA (SCROLL) */
+          else if (data.type === 'scroll') {
+            const targetEl = document.elementFromPoint(currentX, currentY) || window;
+            if (targetEl.scrollBy) {
+              targetEl.scrollBy({ top: data.deltaY, behavior: 'smooth' });
+            } else {
+              window.scrollBy({ top: data.deltaY, behavior: 'smooth' });
+            }
+          }
+          /* NAVEGAÇÃO VOLTAR / AVANÇAR */
+          else if (data.type === 'nav') {
+            if (data.action === 'back') history.back();
+            if (data.action === 'forward') history.forward();
+            logAction(`Navegação acionada: ${data.action}`);
           }
         });
 
@@ -406,44 +574,61 @@
         });
       });
 
-      function triggerVirtualClick(x, y) {
+      function triggerMouseEvent(eventName, x, y, extraInit = {}) {
         cursor.classList.add('active');
         setTimeout(() => cursor.classList.remove('active'), 150);
 
         const element = document.elementFromPoint(x, y);
         if (element) {
-          element.click();
+          const mouseEvt = new MouseEvent(eventName, {
+            bubbles: true,
+            cancelable: true,
+            clientX: x,
+            clientY: y,
+            button: extraInit.button || 0,
+            ...extraInit
+          });
+          element.dispatchEvent(mouseEvt);
+          if (eventName === 'click' && typeof element.click === 'function') {
+            element.click();
+          }
         }
       }
     }
 
-    function highlightCard(buttonElement) {
+    function logAction(msg) {
       const log = document.getElementById('feedback-log');
-      log.textContent = `Você clicou no: ${buttonElement.textContent} às ${new Date().toLocaleTimeString()}`;
+      log.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    }
+
+    function highlightCard(buttonElement, buttonName) {
+      logAction(`Ação detectada: ${buttonName} no elemento "${buttonElement.textContent.trim()}"`);
       buttonElement.classList.add('highlight');
       setTimeout(() => buttonElement.classList.remove('highlight'), 500);
     }
 
 
     /* ==========================================================================
-       MODO CONTROLLER (PONTEIRO LASER - ORIENTAÇÃO ABSOLUTA)
+       MODO CONTROLLER (CELULAR - AIR MOUSE PRO)
        ========================================================================== */
     function initControllerMode(targetRoomId) {
       document.getElementById('controller-view').classList.remove('hidden');
 
       const statusEl = document.getElementById('controller-status');
+      const statusDot = document.getElementById('status-dot');
       const btnSensors = document.getElementById('btn-enable-sensors');
       const btnCalibrate = document.getElementById('btn-calibrate');
       const instructionText = document.getElementById('instruction-text');
+      const sensSlider = document.getElementById('sens-slider');
+
       const btnLeft = document.getElementById('btn-left-click');
       const btnRight = document.getElementById('btn-right-click');
-      const sensSlider = document.getElementById('sens-slider');
-      const chkInvertX = document.getElementById('chk-invert-x');
-      const chkInvertY = document.getElementById('chk-invert-y');
+      const btnMiddle = document.getElementById('btn-middle-click');
+      const btnNavBack = document.getElementById('btn-nav-back');
+      const btnNavForward = document.getElementById('btn-nav-forward');
+      const scrollStrip = document.getElementById('scroll-strip');
 
       let conn = null;
-
-      // Variáveis de calibragem da mira
       let baseAlpha = null;
       let baseBeta = null;
       let currentAlpha = 0;
@@ -455,17 +640,19 @@
         conn = peer.connect(targetRoomId);
 
         conn.on('open', () => {
-          statusEl.textContent = "Conectado ao PC!";
+          statusEl.textContent = "Conectado ao PC";
           statusEl.style.color = "#22c55e";
+          statusDot.classList.add('online');
         });
 
         conn.on('close', () => {
-          statusEl.textContent = "Conexão perdida.";
+          statusEl.textContent = "Desconectado";
           statusEl.style.color = "#ef4444";
+          statusDot.classList.remove('online');
         });
       });
 
-      /* Solicita permissão dos sensores de orientação */
+      /* Ativação dos Sensores de Movimento */
       btnSensors.addEventListener('click', async () => {
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
           try {
@@ -483,68 +670,130 @@
         }
       });
 
-      /* Centraliza a mira na posição atual */
       btnCalibrate.addEventListener('click', () => {
         calibrateCenter();
-        if (navigator.vibrate) navigator.vibrate(40);
+        vibrate(30);
       });
 
       function calibrateCenter() {
         baseAlpha = currentAlpha;
         baseBeta = currentBeta;
-        instructionText.innerHTML = "<b>Mira Centralizada!</b> Mova a ponta do celular para apontar na tela.";
+        instructionText.innerHTML = "<b>Mira Centralizada!</b> Controle ativo na tela.";
       }
 
       function startLaserPointer() {
-        btnSensors.classList.add('hidden');
-        btnCalibrate.classList.remove('hidden');
-
+        btnSensors.style.display = 'none';
+        instructionText.innerHTML = "<b>Ponteiro Ativo!</b> Mova o celular para controlar o cursor.";
         window.addEventListener('deviceorientation', handleOrientation);
       }
 
       function handleOrientation(event) {
         if (!conn || !conn.open || event.alpha === null || event.beta === null) return;
 
-        currentAlpha = event.alpha; // Rotação horizontal (Yaw / Azimute)
-        currentBeta = event.beta;   // Elevação vertical (Pitch)
+        currentAlpha = event.alpha;
+        currentBeta = event.beta;
 
-        // Na primeira leitura, ajusta o centro automaticamente
         if (baseAlpha === null || baseBeta === null) {
           calibrateCenter();
         }
 
-        // Calcula a diferença angular horizontal (considerando a volta completa 0-360)
         let diffAlpha = currentAlpha - baseAlpha;
         while (diffAlpha < -180) diffAlpha += 360;
         while (diffAlpha > 180) diffAlpha -= 360;
 
-        // Diferença angular vertical
         let diffBeta = currentBeta - baseBeta;
 
-        // Fatores de inversão
-        let factorX = chkInvertX.checked ? 1 : -1;
-        let factorY = chkInvertY.checked ? -1 : 1;
-
-        // Envia o ângulo offset do laser para o PC
         conn.send({
           type: 'pointer',
           angleX: diffAlpha,
           angleY: diffBeta,
-          sensitivity: parseFloat(sensSlider.value),
-          factorX: factorX,
-          factorY: factorY
+          sensitivity: parseFloat(sensSlider.value)
         });
       }
 
-      function sendClick() {
-        if (conn && conn.open) {
-          conn.send({ type: 'click' });
-          if (navigator.vibrate) navigator.vibrate(25);
-        }
-      }
+      /* 1. CLIQUE ESQUERDO + SUPORTE A ARRASTAR (DRAG & DROP) */
+      let dragTimer = null;
+      let isDragging = false;
 
-      btnLeft.addEventListener('click', sendClick);
-      btnRight.addEventListener('click', sendClick);
+      btnLeft.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        btnLeft.classList.add('pressed');
+        vibrate(20);
+
+        // Se segurar por mais de 250ms, inicia o modo Arrastar (MouseDown)
+        dragTimer = setTimeout(() => {
+          isDragging = true;
+          if (conn && conn.open) conn.send({ type: 'mousedown' });
+          vibrate([30, 30]); // Duplo pulso hápitco confirmando o clique travado/arraste
+        }, 250);
+      });
+
+      btnLeft.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        btnLeft.classList.remove('pressed');
+        clearTimeout(dragTimer);
+
+        if (conn && conn.open) {
+          if (isDragging) {
+            conn.send({ type: 'mouseup' });
+            isDragging = false;
+          } else {
+            conn.send({ type: 'click' });
+          }
+        }
+      });
+
+      /* 2. CLIQUE DIREITO */
+      btnRight.addEventListener('click', () => {
+        if (conn && conn.open) conn.send({ type: 'rightclick' });
+        vibrate(30);
+      });
+
+      /* 3. CLIQUE CENTRAL (M3) */
+      btnMiddle.addEventListener('click', () => {
+        if (conn && conn.open) conn.send({ type: 'middleclick' });
+        vibrate(30);
+      });
+
+      /* 4. BOTÕES DE NAVEGAÇÃO (VOLTAR / AVANÇAR) */
+      btnNavBack.addEventListener('click', () => {
+        if (conn && conn.open) conn.send({ type: 'nav', action: 'back' });
+        vibrate(25);
+      });
+
+      btnNavForward.addEventListener('click', () => {
+        if (conn && conn.open) conn.send({ type: 'nav', action: 'forward' });
+        vibrate(25);
+      });
+
+      /* 5. FAIXA TÁTIL DE SCROLL (ROLA A PÁGINA PARA CIMA / BAIXO) */
+      let lastTouchY = 0;
+
+      scrollStrip.addEventListener('touchstart', (e) => {
+        lastTouchY = e.touches[0].clientY;
+        scrollStrip.classList.add('scroll-strip-active');
+      });
+
+      scrollStrip.addEventListener('touchmove', (e) => {
+        const currentY = e.touches[0].clientY;
+        const deltaY = (lastTouchY - currentY) * 2.5; // Fator de velocidade de rolagem
+        lastTouchY = currentY;
+
+        if (conn && conn.open && Math.abs(deltaY) > 2) {
+          conn.send({
+            type: 'scroll',
+            deltaY: deltaY
+          });
+        }
+      });
+
+      scrollStrip.addEventListener('touchend', () => {
+        scrollStrip.classList.remove('scroll-strip-active');
+      });
+
+      function vibrate(pattern) {
+        if (navigator.vibrate) navigator.vibrate(pattern);
+      }
     }
   </script>
 </body>
