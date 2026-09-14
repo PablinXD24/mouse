@@ -206,8 +206,26 @@
       border-color: #10b981;
     }
 
+    /* Campo para teste de digitação no Desktop */
+    .type-test-input {
+      width: 100%;
+      padding: 0.9rem 1.2rem;
+      margin-top: 0.8rem;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .type-test-input:focus {
+      border-color: var(--accent-color);
+    }
+
     .scroll-test-area {
-      height: 130px;
+      height: 120px;
       overflow-y: auto;
       background: rgba(0, 0, 0, 0.3);
       padding: 1rem;
@@ -277,7 +295,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 1rem 1.2rem;
+      padding: 0.9rem 1.1rem;
       background: rgba(0, 0, 0, 0.2);
       border-bottom: 1px solid var(--card-border);
     }
@@ -305,11 +323,11 @@
 
     .header-actions {
       display: flex;
-      gap: 0.4rem;
+      gap: 0.35rem;
     }
 
     .sq-btn-mini {
-      padding: 0.45rem 0.8rem;
+      padding: 0.45rem 0.75rem;
       background: var(--btn-bg);
       border: 1px solid var(--card-border);
       color: var(--text-primary);
@@ -319,14 +337,59 @@
       transition: all 0.2s;
     }
 
-    .sq-btn-mini:active {
-      opacity: 0.7;
+    .sq-btn-mini:active, .sq-btn-mini.active {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: var(--accent-color);
+      color: var(--accent-color);
     }
 
     .sq-btn-mini.calibrate {
       background: rgba(56, 189, 248, 0.12);
       color: var(--accent-color);
       border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    /* Barra de Teclado Flutuante no Celular */
+    .keyboard-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.8rem 1.1rem;
+      background: rgba(0, 0, 0, 0.4);
+      border-bottom: 1px solid var(--card-border);
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .keyboard-input-field {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      outline: none;
+      user-select: auto;
+      -webkit-user-select: auto;
+    }
+
+    .keyboard-input-field:focus {
+      border-color: var(--accent-color);
+    }
+
+    .keyboard-action-btn {
+      padding: 0.6rem 0.9rem;
+      background: var(--btn-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-primary);
+      border-radius: 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
     }
 
     /* Área Central Touch */
@@ -481,11 +544,14 @@
     <main class="desktop-content">
       <header>
         <h1>Air Mouse Desktop</h1>
-        <p>Controle completo por gestos e sensores de movimento em tempo real.</p>
+        <p>Controle completo por gestos, sensores e digitação em tempo real.</p>
       </header>
 
       <section class="interactive-zone">
-        <h2>Área de Testes do Mouse</h2>
+        <h2>Área de Testes do Mouse & Teclado</h2>
+
+        <h3 style="margin-top: 1rem;">Teste de Digitação Rápida:</h3>
+        <input type="text" id="desktop-type-test" class="type-test-input" placeholder="Clique aqui ou aperte ⌨️ no celular para digitar..." />
         
         <div class="card-grid">
           <button class="test-btn" onclick="highlightCard(this, 'Clique Comum (Lado Direito)')">Botão 1 (Clique Comum)</button>
@@ -502,16 +568,6 @@
           <p>5. Testando detecção do elemento rolável sob o cursor...</p>
           <p>6. Quase no fim da caixa #1...</p>
           <p>7. Fim do scroll da caixa #1.</p>
-        </div>
-
-        <h3 style="margin-top: 1.5rem;">Caixa de Teste de Scroll Interna #2:</h3>
-        <div class="scroll-test-area">
-          <p>A. Mova o cursor para ESTA segunda caixa para testar o scroll automático...</p>
-          <p>B. A caixa #2 rolará independentemente!</p>
-          <p>C. Linha de conteúdo B3...</p>
-          <p>D. Linha de conteúdo B4...</p>
-          <p>E. Linha de conteúdo B5...</p>
-          <p>F. Fim do scroll da caixa #2.</p>
         </div>
 
         <div id="feedback-log">Nenhuma ação registrada ainda.</div>
@@ -533,10 +589,17 @@
         </div>
 
         <div class="header-actions">
-          <button id="btn-nav-back" class="sq-btn-mini">◀ Voltar</button>
+          <button id="btn-toggle-keyboard" class="sq-btn-mini">⌨️</button>
+          <button id="btn-nav-back" class="sq-btn-mini">◀</button>
           <button id="btn-calibrate" class="sq-btn-mini calibrate">🎯 Mira</button>
-          <button id="btn-nav-forward" class="sq-btn-mini">Avançar ▶</button>
+          <button id="btn-nav-forward" class="sq-btn-mini">▶</button>
         </div>
+      </div>
+
+      <!-- Barra de Teclado Flutuante -->
+      <div id="keyboard-bar" class="keyboard-bar hidden">
+        <input type="text" id="controller-keyboard-input" class="keyboard-input-field" placeholder="Digite para enviar ao PC..." autocomplete="off" />
+        <button id="btn-send-enter" class="keyboard-action-btn">Enter ↵</button>
       </div>
 
       <!-- Corpo Interno (Superfície Touch / Gestos) -->
@@ -670,6 +733,10 @@
           else if (data.type === 'scroll') {
             scrollElementUnderCursor(currentX, currentY, data.deltaY);
           }
+          /* PROCESSAMENTO DE DIGITAÇÃO E TECLADO */
+          else if (data.type === 'keyboard') {
+            handleKeyboardInput(data);
+          }
           else if (data.type === 'nav') {
             if (data.action === 'back') history.back();
             if (data.action === 'forward') history.forward();
@@ -683,6 +750,47 @@
           qrModal.style.display = 'flex';
         });
       });
+
+      /* Função para processar entrada de texto no Desktop */
+      function handleKeyboardInput(data) {
+        let activeEl = document.activeElement;
+
+        // Se nenhum elemento estiver em foco, busca o elemento sob o cursor virtual
+        if (!activeEl || activeEl === document.body) {
+          const elAtCursor = document.elementFromPoint(currentX, currentY);
+          if (elAtCursor && (elAtCursor.tagName === 'INPUT' || elAtCursor.tagName === 'TEXTAREA' || elAtCursor.isContentEditable)) {
+            activeEl = elAtCursor;
+            activeEl.focus();
+          }
+        }
+
+        // Se ainda assim não houver campo editável, usa o campo de teste padrão
+        if (!activeEl || (activeEl.tagName !== 'INPUT' && activeEl.tagName !== 'TEXTAREA' && !activeEl.isContentEditable)) {
+          activeEl = document.getElementById('desktop-type-test');
+          if (activeEl) activeEl.focus();
+        }
+
+        if (!activeEl) return;
+
+        if (data.action === 'backspace') {
+          if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
+            activeEl.value = activeEl.value.slice(0, -1);
+            activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        } else if (data.action === 'enter') {
+          const enterEvt = new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13, bubbles: true });
+          activeEl.dispatchEvent(enterEvt);
+          logAction('Tecla Enter enviada.');
+        } else if (data.text !== undefined) {
+          if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
+            activeEl.value += data.text;
+            activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+          } else if (activeEl.isContentEditable) {
+            document.execCommand('insertText', false, data.text);
+          }
+          logAction(`Texto digitado: "${data.text}"`);
+        }
+      }
 
       function scrollElementUnderCursor(x, y, deltaY) {
         let el = document.elementFromPoint(x, y);
@@ -766,6 +874,11 @@
       const btnSensors = document.getElementById('btn-enable-sensors');
       const btnCalibrate = document.getElementById('btn-calibrate');
       const instructionText = document.getElementById('instruction-text');
+
+      const btnToggleKeyboard = document.getElementById('btn-toggle-keyboard');
+      const keyboardBar = document.getElementById('keyboard-bar');
+      const keyboardInput = document.getElementById('controller-keyboard-input');
+      const btnSendEnter = document.getElementById('btn-send-enter');
 
       const btnLeft = document.getElementById('btn-left-click');
       const btnRight = document.getElementById('btn-right-click');
@@ -857,6 +970,47 @@
         });
       }
 
+      /* LÓGICA DO TECLADO NO CELULAR */
+      btnToggleKeyboard.addEventListener('click', () => {
+        keyboardBar.classList.toggle('hidden');
+        btnToggleKeyboard.classList.toggle('active');
+        if (!keyboardBar.classList.contains('hidden')) {
+          keyboardInput.focus();
+        }
+      });
+
+      let lastInputValue = '';
+      keyboardInput.addEventListener('input', (e) => {
+        if (!conn || !conn.open) return;
+
+        const val = keyboardInput.value;
+        if (val.length < lastInputValue.length) {
+          // Apagou caractere
+          conn.send({ type: 'keyboard', action: 'backspace' });
+        } else if (val.length > lastInputValue.length) {
+          // Adicionou caractere(s)
+          const addedText = val.slice(lastInputValue.length);
+          conn.send({ type: 'keyboard', text: addedText });
+        }
+        lastInputValue = val;
+      });
+
+      keyboardInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (conn && conn.open) conn.send({ type: 'keyboard', action: 'enter' });
+          keyboardInput.value = '';
+          lastInputValue = '';
+        }
+      });
+
+      btnSendEnter.addEventListener('click', () => {
+        if (conn && conn.open) conn.send({ type: 'keyboard', action: 'enter' });
+        keyboardInput.value = '';
+        lastInputValue = '';
+        vibrate(25);
+      });
+
       /* LÓGICA DE SCROLL PELA BARRA DEDICADA */
       let lastTouchY = 0;
 
@@ -890,7 +1044,7 @@
       let touchStartTime = 0;
 
       touchSurface.addEventListener('touchstart', (e) => {
-        if (e.target === scrollStrip || e.target === btnSensors) return;
+        if (e.target === scrollStrip || e.target === btnSensors || e.target === keyboardInput) return;
 
         touchStartTime = Date.now();
         const touchX = e.touches[0].clientX;
@@ -906,7 +1060,7 @@
       });
 
       touchSurface.addEventListener('touchend', (e) => {
-        if (e.target === scrollStrip || e.target === btnSensors) return;
+        if (e.target === scrollStrip || e.target === btnSensors || e.target === keyboardInput) return;
 
         clearTimeout(dragTimer);
 
