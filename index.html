@@ -70,7 +70,7 @@
       left: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
-      z-index: 9999;
+      z-index: 99999; /* Z-Index elevado para o mouse funcionar por cima da mídia */
       box-shadow: 0 0 20px var(--accent-color);
       transition: background-color 0.15s, transform 0.1s, box-shadow 0.15s;
     }
@@ -87,7 +87,41 @@
       box-shadow: 0 0 22px #f59e0b;
     }
 
-    /* Modais do Desktop */
+    /* Container de Transmissão de Mídia / Mirror no Desktop */
+    .media-overlay {
+      position: fixed;
+      inset: 0;
+      background: #000000;
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .remote-video-player {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    .close-media-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 600;
+      padding: 10px 18px;
+      background: rgba(18, 22, 33, 0.8);
+      border: 1px solid var(--card-border);
+      color: white;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+    }
+
     .modal {
       position: fixed;
       inset: 0;
@@ -142,68 +176,6 @@
       background: rgba(16, 185, 129, 0.15);
       color: #34d399;
       border-color: rgba(16, 185, 129, 0.3);
-    }
-
-    /* Modal do Player / Transmissão no Desktop */
-    .stream-modal-content {
-      width: 90%;
-      max-width: 1000px;
-      background: #000000;
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      box-shadow: 0 30px 60px rgba(0,0,0,0.8);
-      position: relative;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .stream-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 1.5rem;
-      background: rgba(18, 22, 33, 0.9);
-      border-bottom: 1px solid var(--card-border);
-    }
-
-    .stream-title {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .close-stream-btn {
-      background: rgba(255,255,255,0.1);
-      border: none;
-      color: var(--text-primary);
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .video-viewport {
-      width: 100%;
-      max-height: 75vh;
-      background: #000000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #desktop-media-element {
-      width: 100%;
-      height: 100%;
-      max-height: 75vh;
-      object-fit: contain;
-    }
-
-    #desktop-image-element {
-      max-width: 100%;
-      max-height: 75vh;
-      object-fit: contain;
     }
 
     .desktop-content {
@@ -358,7 +330,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.9rem 1.1rem;
+      padding: 0.8rem 1rem;
       background: rgba(0, 0, 0, 0.2);
       border-bottom: 1px solid var(--card-border);
     }
@@ -366,8 +338,8 @@
     .status-badge-small {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      font-size: 0.8rem;
+      gap: 0.4rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: var(--text-secondary);
     }
@@ -390,12 +362,12 @@
     }
 
     .sq-btn-mini {
-      padding: 0.42rem 0.65rem;
+      padding: 0.45rem 0.65rem;
       background: var(--btn-bg);
       border: 1px solid var(--card-border);
       color: var(--text-primary);
       border-radius: 20px;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-weight: 600;
       transition: all 0.2s;
     }
@@ -470,12 +442,12 @@
       color: var(--accent-color);
     }
 
-    /* Painel de Setas Direcionais (D-Pad Bar) */
+    /* Painel D-Pad */
     .dpad-bar {
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 0.8rem;
+      padding: 1rem;
       background: rgba(0, 0, 0, 0.35);
       border-bottom: 1px solid var(--card-border);
       animation: fadeIn 0.2s ease-out;
@@ -483,8 +455,8 @@
 
     .dpad-grid {
       display: grid;
-      grid-template-columns: repeat(3, 48px);
-      grid-template-rows: repeat(3, 48px);
+      grid-template-columns: repeat(3, 52px);
+      grid-template-rows: repeat(3, 52px);
       gap: 6px;
       justify-content: center;
       align-items: center;
@@ -497,7 +469,7 @@
       border: 1px solid var(--card-border);
       color: var(--text-primary);
       border-radius: 14px;
-      font-size: 1rem;
+      font-size: 1.1rem;
       font-weight: 700;
       display: flex;
       align-items: center;
@@ -514,52 +486,10 @@
     }
 
     .dpad-btn.ok-btn {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       background: rgba(56, 189, 248, 0.12);
       color: var(--accent-color);
       border-color: rgba(56, 189, 248, 0.3);
-    }
-
-    /* Painel de Controle de Transmissão de Filme/Mídia */
-    .media-cast-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.8rem 1.1rem;
-      background: rgba(16, 185, 129, 0.12);
-      border-bottom: 1px solid rgba(16, 185, 129, 0.25);
-      animation: fadeIn 0.2s ease-out;
-    }
-
-    .media-cast-info {
-      font-size: 0.8rem;
-      color: #34d399;
-      font-weight: 600;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 180px;
-    }
-
-    .media-cast-controls {
-      display: flex;
-      gap: 0.4rem;
-    }
-
-    .media-btn {
-      padding: 0.4rem 0.75rem;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid var(--card-border);
-      color: var(--text-primary);
-      border-radius: 14px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-
-    .media-btn.stop {
-      background: rgba(239, 68, 68, 0.2);
-      color: #f87171;
-      border-color: rgba(239, 68, 68, 0.3);
     }
 
     /* Área Central Touch */
@@ -698,9 +628,15 @@
 
   <!-- ================= VISTA DO DESKTOP (HOST) ================= -->
   <div id="host-view" class="view hidden">
+    <!-- Cursor Virtual na tela do PC -->
     <div id="virtual-cursor"></div>
 
-    <!-- Modal do QR Code -->
+    <!-- Overlay de Transmissão de Mídia / Mirror Screen -->
+    <div id="media-overlay" class="media-overlay hidden">
+      <button id="btn-close-media" class="close-media-btn">✕ Fechar Transmissão</button>
+      <video id="remote-video" class="remote-video-player" autoplay playsinline controls></video>
+    </div>
+
     <div id="qr-modal" class="modal">
       <div class="modal-card">
         <h2>Air Mouse Pro</h2>
@@ -712,24 +648,10 @@
       </div>
     </div>
 
-    <!-- Modal de Transmissão de Mídia / Mirror Screen no Desktop -->
-    <div id="desktop-stream-modal" class="modal hidden">
-      <div class="stream-modal-content">
-        <div class="stream-header">
-          <span id="stream-modal-title" class="stream-title">Transmissão em Tempo Real</span>
-          <button id="btn-close-stream" class="close-stream-btn">✕</button>
-        </div>
-        <div class="video-viewport">
-          <video id="desktop-media-element" controls autoplay playsinline class="hidden"></video>
-          <img id="desktop-image-element" class="hidden" alt="Foto transmitida" />
-        </div>
-      </div>
-    </div>
-
     <main class="desktop-content">
       <header>
         <h1>Air Mouse Desktop</h1>
-        <p>Controle completo por gestos, sensores, transmissão de mídia e espelhamento em tempo real.</p>
+        <p>Controle completo por gestos, sensores, direcionais e streaming de vídeo em tempo real.</p>
       </header>
 
       <section class="interactive-zone">
@@ -764,6 +686,10 @@
   <!-- ================= VISTA DO CELULAR (QUADRADO ÚNICO CLEAN) ================= -->
   <div id="controller-view" class="view hidden">
     
+    <!-- Elementos Ocultos de Mídia no Celular -->
+    <input type="file" id="media-file-input" accept="video/*,audio/*" style="display: none;" />
+    <video id="local-video-player" playsinline muted style="display: none;"></video>
+
     <div id="master-square" class="master-square">
       
       <!-- Topo Interno -->
@@ -774,21 +700,15 @@
         </div>
 
         <div class="header-actions">
-          <button id="btn-toggle-keyboard" class="sq-btn-mini" title="Teclado">⌨️</button>
-          <button id="btn-toggle-dpad" class="sq-btn-mini" title="Setas Direcionais">🧭</button>
           <button id="btn-mirror-screen" class="sq-btn-mini" title="Espelhar Tela">📺</button>
-          <button id="btn-cast-file" class="sq-btn-mini" title="Transmitir Filme/Mídia">🎬</button>
-          <button id="btn-calibrate" class="sq-btn-mini calibrate" title="Centralizar Mira">🎯 Mira</button>
+          <button id="btn-stream-file" class="sq-btn-mini" title="Transmitir Filme/Vídeo">🎬</button>
+          <button id="btn-toggle-keyboard" class="sq-btn-mini">⌨️</button>
+          <button id="btn-toggle-dpad" class="sq-btn-mini">🧭</button>
+          <button id="btn-calibrate" class="sq-btn-mini calibrate">🎯 Mira</button>
         </div>
       </div>
 
-      <!-- Input de Arquivo Oculto para Cast de Filmes/Fotos -->
-      <input type="file" id="file-picker-input" accept="video/*,audio/*,image/*" style="display: none;" />
-
-      <!-- Video Oculto do Celular para Stream do Filme -->
-      <video id="mobile-hidden-video" style="display: none;" playsinline muted></video>
-
-      <!-- Barra de Teclado Flutuante com Botão de Limpar -->
+      <!-- Barra de Teclado Flutuante -->
       <div id="keyboard-bar" class="keyboard-bar hidden">
         <input type="text" id="controller-keyboard-input" class="keyboard-input-field" placeholder="Digite no celular..." autocomplete="off" autocorrect="on" />
         <button id="btn-clear-text" class="keyboard-action-btn">🗑️ Limpar</button>
@@ -807,15 +727,6 @@
           <div></div>
           <button class="dpad-btn" data-key="ArrowDown">▼</button>
           <div></div>
-        </div>
-      </div>
-
-      <!-- Painel de Controle de Transmissão de Filme/Mídia Ativo -->
-      <div id="media-cast-bar" class="media-cast-bar hidden">
-        <span id="media-cast-filename" class="media-cast-info">Transmitindo Filme...</span>
-        <div class="media-cast-controls">
-          <button id="btn-media-toggle-play" class="media-btn">⏯️ Play/Pausa</button>
-          <button id="btn-media-stop" class="media-btn stop">⏹️ Parar</button>
         </div>
       </div>
 
@@ -884,12 +795,9 @@
       const cursor = document.getElementById('virtual-cursor');
       const statusBadge = document.getElementById('status-badge');
       const qrModal = document.getElementById('qr-modal');
-
-      const desktopStreamModal = document.getElementById('desktop-stream-modal');
-      const streamModalTitle = document.getElementById('stream-modal-title');
-      const desktopMediaElement = document.getElementById('desktop-media-element');
-      const desktopImageElement = document.getElementById('desktop-image-element');
-      const btnCloseStream = document.getElementById('btn-close-stream');
+      const mediaOverlay = document.getElementById('media-overlay');
+      const remoteVideo = document.getElementById('remote-video');
+      const btnCloseMedia = document.getElementById('btn-close-media');
 
       let targetX = window.innerWidth / 2;
       let targetY = window.innerHeight / 2;
@@ -907,6 +815,12 @@
       }
       requestAnimationFrame(renderLoop);
 
+      btnCloseMedia.addEventListener('click', () => {
+        mediaOverlay.classList.add('hidden');
+        remoteVideo.pause();
+        remoteVideo.srcObject = null;
+      });
+
       const peer = new Peer();
 
       peer.on('open', (id) => {
@@ -918,34 +832,16 @@
         });
       });
 
-      // RECEBE CHAMADAS WEBRTC (ESPELHAMENTO DE TELA OU TRANSMISSÃO DE FILMES)
+      // RECEBIMENTO DE TRANSMISSÃO DE VÍDEO / MIRROR SCREEN
       peer.on('call', (call) => {
-        call.answer(); // Responde à chamada de transmissão
-
+        call.answer(); // Atende a chamada de vídeo recebida do celular
         call.on('stream', (remoteStream) => {
-          desktopImageElement.classList.add('hidden');
-          desktopMediaElement.classList.remove('hidden');
-          desktopMediaElement.srcObject = remoteStream;
-          desktopMediaElement.play();
-
-          desktopStreamModal.classList.remove('hidden');
-          streamModalTitle.textContent = call.metadata?.title || (call.metadata?.type === 'screen' ? 'Espelhamento de Tela do Celular' : 'Transmissão de Mídia');
-          logAction(`Transmissão iniciada: ${streamModalTitle.textContent}`);
+          remoteVideo.srcObject = remoteStream;
+          remoteVideo.play();
+          mediaOverlay.classList.remove('hidden');
+          logAction('Transmissão de Mídia/Mirror iniciada.');
         });
       });
-
-      btnCloseStream.addEventListener('click', closeDesktopStream);
-
-      function closeDesktopStream() {
-        desktopStreamModal.classList.add('hidden');
-        if (desktopMediaElement.srcObject) {
-          desktopMediaElement.srcObject.getTracks().forEach(track => track.stop());
-          desktopMediaElement.srcObject = null;
-        }
-        desktopMediaElement.pause();
-        desktopImageElement.src = '';
-        logAction('Transmissão encerrada.');
-      }
 
       peer.on('connection', (conn) => {
         statusBadge.innerHTML = "<span>Conectado!</span>";
@@ -987,22 +883,10 @@
           else if (data.type === 'keyboard') {
             handleKeyboardInput(data);
           }
-          /* COMANDOS DE CONTROLE DA TRANSMISSÃO DE MÍDIA */
-          else if (data.type === 'media_control') {
-            if (data.action === 'toggle_play') {
-              if (desktopMediaElement.paused) desktopMediaElement.play();
-              else desktopMediaElement.pause();
-            } else if (data.action === 'stop') {
-              closeDesktopStream();
-            }
-          }
-          /* EMBUTIR IMAGEM TRANSMITIDA */
-          else if (data.type === 'image_cast') {
-            desktopMediaElement.classList.add('hidden');
-            desktopImageElement.classList.remove('hidden');
-            desktopImageElement.src = data.src;
-            desktopStreamModal.classList.remove('hidden');
-            streamModalTitle.textContent = `Foto: ${data.title}`;
+          else if (data.type === 'stop_media') {
+            mediaOverlay.classList.add('hidden');
+            remoteVideo.pause();
+            remoteVideo.srcObject = null;
           }
           else if (data.type === 'nav') {
             if (data.action === 'back') history.back();
@@ -1018,7 +902,7 @@
         });
       });
 
-      /* Função de Inserção / Limpeza de Texto e Comandos no Computador */
+      /* Processamento de Texto no Computador */
       function handleKeyboardInput(data) {
         let activeEl = document.activeElement;
 
@@ -1045,7 +929,7 @@
           const evtUp = new KeyboardEvent('keyup', { key: key, code: key, bubbles: true });
           target.dispatchEvent(evtDown);
           target.dispatchEvent(evtUp);
-          logAction(`Seta Direcional enviada: ${key}`);
+          logAction(`Seta Direcional: ${key}`);
         }
         else if (data.action === 'clear') {
           if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
@@ -1055,7 +939,7 @@
           } else if (activeEl && activeEl.isContentEditable) {
             activeEl.textContent = '';
           }
-          logAction('Texto do campo limpo completamente.');
+          logAction('Texto do campo limpo.');
         }
         else if (data.action === 'backspace') {
           if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
@@ -1087,7 +971,7 @@
           if (activeEl && activeEl.tagName === 'TEXTAREA') {
             insertTextIntoElement(activeEl, '\n');
           }
-          logAction('Tecla Enter acionada');
+          logAction('Enter acionado');
         } 
         else if (data.text !== undefined && activeEl) {
           insertTextIntoElement(activeEl, data.text);
@@ -1185,7 +1069,7 @@
 
 
     /* ==========================================================================
-       MODO CONTROLLER (CELULAR - CLEAN ALL-IN-ONE)
+       MODO CONTROLLER (CELULAR - MIRROR SCREEN & FILE STREAM)
        ========================================================================== */
     function initControllerMode(targetRoomId) {
       document.getElementById('controller-view').classList.remove('hidden');
@@ -1199,6 +1083,11 @@
       const btnCalibrate = document.getElementById('btn-calibrate');
       const instructionText = document.getElementById('instruction-text');
 
+      const btnMirrorScreen = document.getElementById('btn-mirror-screen');
+      const btnStreamFile = document.getElementById('btn-stream-file');
+      const mediaFileInput = document.getElementById('media-file-input');
+      const localVideoPlayer = document.getElementById('local-video-player');
+
       const btnToggleKeyboard = document.getElementById('btn-toggle-keyboard');
       const keyboardBar = document.getElementById('keyboard-bar');
       const keyboardInput = document.getElementById('controller-keyboard-input');
@@ -1208,26 +1097,16 @@
       const btnToggleDpad = document.getElementById('btn-toggle-dpad');
       const dpadBar = document.getElementById('dpad-bar');
 
-      const btnMirrorScreen = document.getElementById('btn-mirror-screen');
-      const btnCastFile = document.getElementById('btn-cast-file');
-      const filePickerInput = document.getElementById('file-picker-input');
-      const mobileHiddenVideo = document.getElementById('mobile-hidden-video');
-
-      const mediaCastBar = document.getElementById('media-cast-bar');
-      const mediaCastFilename = document.getElementById('media-cast-filename');
-      const btnMediaTogglePlay = document.getElementById('btn-media-toggle-play');
-      const btnMediaStop = document.getElementById('btn-media-stop');
-
       const btnLeft = document.getElementById('btn-left-click');
       const btnRight = document.getElementById('btn-right-click');
       const btnMiddle = document.getElementById('btn-middle-click');
 
       let conn = null;
+      let activeCall = null;
       let baseAlpha = null;
       let baseBeta = null;
       let currentAlpha = 0;
       let currentBeta = 0;
-      let activeCall = null;
 
       const peer = new Peer();
 
@@ -1249,101 +1128,73 @@
 
       /* 1. ESPELHAMENTO DE TELA (MIRROR SCREEN) */
       btnMirrorScreen.addEventListener('click', async () => {
+        vibrate(30);
+        if (btnMirrorScreen.classList.contains('active')) {
+          if (activeCall) activeCall.close();
+          btnMirrorScreen.classList.remove('active');
+          if (conn && conn.open) conn.send({ type: 'stop_media' });
+          return;
+        }
+
         try {
           if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-            alert('A captura de tela não é suportada neste navegador.');
+            alert('Espelhamento de tela não é suportado neste navegador móvel.');
             return;
           }
 
-          const screenStream = await navigator.mediaDevices.getDisplayMedia({
+          const stream = await navigator.mediaDevices.getDisplayMedia({
             video: { cursor: "always" },
             audio: true
           });
 
+          activeCall = peer.call(targetRoomId, stream);
           btnMirrorScreen.classList.add('active');
-          vibrate(40);
 
-          // Inicia a chamada WebRTC transmitindo a tela do celular
-          activeCall = peer.call(targetRoomId, screenStream, {
-            metadata: { type: 'screen', title: 'Espelhamento do Celular' }
-          });
-
-          // Quando o usuário interromper o compartilhamento pelo próprio sistema
-          screenStream.getVideoTracks()[0].onended = () => {
+          stream.getVideoTracks()[0].onended = () => {
             btnMirrorScreen.classList.remove('active');
-            if (activeCall) activeCall.close();
+            if (conn && conn.open) conn.send({ type: 'stop_media' });
           };
         } catch (err) {
-          console.error('Erro ao espelhar tela:', err);
+          console.error(err);
+          alert('Não foi possível iniciar o espelhamento de tela.');
         }
       });
 
-      /* 2. TRANSMISSÃO DE FILME / MÍDIA (CAST DE ARQUIVOS) */
-      btnCastFile.addEventListener('click', () => {
-        filePickerInput.click();
+      /* 2. TRANSMISSÃO DE FILME / VÍDEO LOCAL */
+      btnStreamFile.addEventListener('click', () => {
+        vibrate(30);
+        if (btnStreamFile.classList.contains('active')) {
+          if (activeCall) activeCall.close();
+          localVideoPlayer.pause();
+          localVideoPlayer.src = '';
+          btnStreamFile.classList.remove('active');
+          if (conn && conn.open) conn.send({ type: 'stop_media' });
+          return;
+        }
+
+        mediaFileInput.click();
       });
 
-      filePickerInput.addEventListener('change', (e) => {
+      mediaFileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        mediaCastFilename.textContent = file.name;
-        mediaCastBar.classList.remove('hidden');
+        const fileUrl = URL.createObjectURL(file);
+        localVideoPlayer.src = fileUrl;
+        localVideoPlayer.play().then(() => {
+          // Captura a transmissão em tempo real do elemento de vídeo
+          const stream = localVideoPlayer.captureStream ? localVideoPlayer.captureStream() : (localVideoPlayer.mozCaptureStream ? localVideoPlayer.mozCaptureStream() : null);
 
-        // Se for uma Imagem
-        if (file.type.startsWith('image/')) {
-          const reader = new FileReader();
-          reader.onload = (evt) => {
-            if (conn && conn.open) {
-              conn.send({
-                type: 'image_cast',
-                src: evt.target.result,
-                title: file.name
-              });
-            }
-          };
-          reader.readAsDataURL(file);
-        } 
-        // Se for Vídeo ou Áudio (Filme)
-        else if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
-          const fileURL = URL.createObjectURL(file);
-          mobileHiddenVideo.src = fileURL;
-          mobileHiddenVideo.play();
-
-          // Captura a Stream de Vídeo/Áudio em tempo real sem precisar transferir o arquivo inteiro
-          const mediaStream = mobileHiddenVideo.captureStream ? mobileHiddenVideo.captureStream() : mobileHiddenVideo.mozCaptureStream();
-
-          activeCall = peer.call(targetRoomId, mediaStream, {
-            metadata: { type: 'media', title: `Filme: ${file.name}` }
-          });
-
-          vibrate([30, 30]);
-        }
-      });
-
-      /* CONTROLES REMOTOS DA TRANSMISSÃO DE FILME */
-      btnMediaTogglePlay.addEventListener('click', () => {
-        if (mobileHiddenVideo.src) {
-          if (mobileHiddenVideo.paused) mobileHiddenVideo.play();
-          else mobileHiddenVideo.pause();
-        }
-        if (conn && conn.open) {
-          conn.send({ type: 'media_control', action: 'toggle_play' });
-        }
-        vibrate(20);
-      });
-
-      btnMediaStop.addEventListener('click', () => {
-        if (mobileHiddenVideo.src) {
-          mobileHiddenVideo.pause();
-          mobileHiddenVideo.src = '';
-        }
-        if (activeCall) activeCall.close();
-        mediaCastBar.classList.add('hidden');
-        if (conn && conn.open) {
-          conn.send({ type: 'media_control', action: 'stop' });
-        }
-        vibrate(30);
+          if (stream) {
+            activeCall = peer.call(targetRoomId, stream);
+            btnStreamFile.classList.add('active');
+          } else {
+            alert('A captura de stream de mídia não é suportada neste navegador.');
+          }
+        }).catch(err => {
+          console.error(err);
+          alert('Erro ao carregar o arquivo de vídeo.');
+        });
       });
 
       /* Ativação dos Sensores */
@@ -1406,7 +1257,7 @@
         });
       }
 
-      /* TOGGLE DO PAINEL D-PAD (SETAS DIRECIONAIS) */
+      /* TOGGLE D-PAD */
       btnToggleDpad.addEventListener('click', () => {
         dpadBar.classList.toggle('hidden');
         btnToggleDpad.classList.toggle('active');
@@ -1428,7 +1279,7 @@
         });
       });
 
-      /* LÓGICA DE TECLADO E LIMPEZA DE TEXTO */
+      /* TECLADO E DIGITAÇÃO */
       btnToggleKeyboard.addEventListener('click', () => {
         keyboardBar.classList.toggle('hidden');
         btnToggleKeyboard.classList.toggle('active');
@@ -1488,7 +1339,7 @@
         vibrate(25);
       });
 
-      /* LÓGICA DE SCROLL PELA BARRA DEDICADA */
+      /* SCROLL */
       let lastTouchY = 0;
 
       scrollStrip.addEventListener('touchstart', (e) => {
@@ -1515,13 +1366,13 @@
         scrollStrip.classList.remove('active');
       });
 
-      /* GESTOS DE TOQUE NA ÁREA CENTRAL */
+      /* GESTOS DA ÁREA CENTRAL */
       let dragTimer = null;
       let isDragging = false;
       let touchStartTime = 0;
 
       touchSurface.addEventListener('touchstart', (e) => {
-        if (e.target === scrollStrip || e.target === btnSensors || e.target === keyboardInput || e.target === btnClearText || e.target === btnSendEnter || e.target.closest('.dpad-grid') || e.target.closest('.media-cast-bar')) return;
+        if (e.target === scrollStrip || e.target === btnSensors || e.target === keyboardInput || e.target === btnClearText || e.target === btnSendEnter || e.target.closest('.dpad-grid')) return;
 
         touchStartTime = Date.now();
         const touchX = e.touches[0].clientX;
@@ -1537,7 +1388,7 @@
       });
 
       touchSurface.addEventListener('touchend', (e) => {
-        if (e.target === scrollStrip || e.target === btnSensors || e.target === keyboardInput || e.target === btnClearText || e.target === btnSendEnter || e.target.closest('.dpad-grid') || e.target.closest('.media-cast-bar')) return;
+        if (e.target === scrollStrip || e.target === btnSensors || e.target === keyboardInput || e.target === btnClearText || e.target === btnSendEnter || e.target.closest('.dpad-grid')) return;
 
         clearTimeout(dragTimer);
 
