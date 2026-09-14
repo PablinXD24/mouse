@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Air Mouse - Laser Pointer Remote</title>
 
-  <!-- CDNs (QRCode e PeerJS) -->
+  <!-- CDNs (QRCode e PeerJS para WebRTC) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
@@ -45,10 +45,10 @@
       display: none !important;
     }
 
-    /* ================= DESKTOP STYLES ================= */
+    /* ================= ESTILOS DESKTOP (HOST) ================= */
     #virtual-cursor {
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       background-color: var(--accent-color);
       border: 2px solid #ffffff;
       border-radius: 50%;
@@ -58,8 +58,8 @@
       transform: translate(-50%, -50%);
       pointer-events: none;
       z-index: 9999;
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
-      transition: transform 0.05s ease-out;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.9);
+      transition: background-color 0.15s, transform 0.1s;
     }
 
     #virtual-cursor.active {
@@ -156,7 +156,7 @@
     }
 
 
-    /* ================= MOBILE CONTROLLER ================= */
+    /* ================= ESTILOS CELULAR (LASER POINTER) ================= */
     #controller-view {
       display: flex;
       flex-direction: column;
@@ -183,12 +183,12 @@
       align-items: center;
       justify-content: center;
       gap: 1rem;
-      padding: 1rem;
+      padding: 1.2rem;
       text-align: center;
     }
 
     .remote-icon {
-      font-size: 2.5rem;
+      font-size: 2.8rem;
     }
 
     .action-btn {
@@ -202,6 +202,11 @@
       font-weight: bold;
       cursor: pointer;
       touch-action: manipulation;
+    }
+
+    .action-btn.recalibrate-btn {
+      background: #eab308;
+      color: #000;
     }
 
     .action-btn.secondary {
@@ -257,7 +262,7 @@
     <div id="qr-modal" class="modal">
       <div class="modal-card">
         <h2>Conecte seu Celular</h2>
-        <p>Escaneie o QR Code abaixo para usar seu celular como Controle Remoto Pointer:</p>
+        <p>Escaneie o QR Code abaixo para usar seu celular como Ponteiro Laser:</p>
         <div id="qrcode"></div>
         <div id="status-badge" class="badge">Aguardando Conexão...</div>
       </div>
@@ -265,8 +270,8 @@
 
     <main class="desktop-content">
       <header>
-        <h1>Air Pointer Remote</h1>
-        <p>Aponte o topo do celular para a tela como um controle remoto!</p>
+        <h1>Air Laser Pointer</h1>
+        <p>Aponte a ponta do celular para a tela como uma caneta laser!</p>
       </header>
 
       <section class="interactive-zone">
@@ -289,10 +294,11 @@
     </div>
 
     <div class="pointer-zone">
-      <div class="remote-icon">📱🎯</div>
-      <p>Aponte a <b>ponta superior</b> do celular para a tela e mova no ar.</p>
+      <div class="remote-icon">🎯📱</div>
+      <p id="instruction-text">Aponte a <b>ponta do celular</b> para o centro da tela do computador e toque no botão abaixo.</p>
       
-      <button id="btn-enable-sensors" class="action-btn">Ativar Modo Controle</button>
+      <button id="btn-enable-sensors" class="action-btn">Ativar Sensores</button>
+      <button id="btn-calibrate" class="action-btn recalibrate-btn hidden">🎯 Centralizar Mira</button>
     </div>
 
     <!-- BOTÕES DE CLIQUE -->
@@ -301,17 +307,17 @@
       <button id="btn-right-click" class="action-btn secondary">Clique Direito</button>
     </div>
 
-    <!-- PANEL DE AJUSTES DOS EIXOS -->
+    <!-- PAINEL DE AJUSTES -->
     <div class="controls-panel">
       <div class="control-row">
-        <label for="sens-slider">Sensibilidade:</label>
-        <input type="range" id="sens-slider" min="0.5" max="4" step="0.2" value="1.8">
+        <label for="sens-slider">Sensibilidade do Apontador:</label>
+        <input type="range" id="sens-slider" min="15" max="60" step="5" value="30">
       </div>
       <div class="control-row">
-        <span>Inverter Sentido:</span>
+        <span>Inverter Direção:</span>
         <div class="checkbox-group">
-          <label><input type="checkbox" id="chk-invert-x"> Eixo X</label>
-          <label><input type="checkbox" id="chk-invert-y"> Eixo Y</label>
+          <label><input type="checkbox" id="chk-invert-x"> Horizontal (X)</label>
+          <label><input type="checkbox" id="chk-invert-y"> Vertical (Y)</label>
         </div>
       </div>
     </div>
@@ -339,9 +345,23 @@
       const statusBadge = document.getElementById('status-badge');
       const qrModal = document.getElementById('qr-modal');
 
-      let cursorX = window.innerWidth / 2;
-      let cursorY = window.innerHeight / 2;
-      updateCursorPosition();
+      // Posição alvo (recebida do celular) e Posição atual (com suavização)
+      let targetX = window.innerWidth / 2;
+      let targetY = window.innerHeight / 2;
+      let currentX = window.innerWidth / 2;
+      let currentY = window.innerHeight / 2;
+
+      // Loop de renderização suave (Lerp) para remover tremido da mão
+      function renderLoop() {
+        currentX += (targetX - currentX) * 0.25;
+        currentY += (targetY - currentY) * 0.25;
+
+        cursor.style.left = `${currentX}px`;
+        cursor.style.top = `${currentY}px`;
+
+        requestAnimationFrame(renderLoop);
+      }
+      requestAnimationFrame(renderLoop);
 
       const peer = new Peer();
 
@@ -363,17 +383,19 @@
         }, 800);
 
         conn.on('data', (data) => {
-          if (data.type === 'move') {
-            cursorX += data.dx;
-            cursorY += data.dy;
+          if (data.type === 'pointer') {
+            // Calcula a posição na tela com base nos ângulos de apontamento offset
+            const sensitivity = data.sensitivity; // pixels por grau
+            
+            let posX = (window.innerWidth / 2) + (data.angleX * sensitivity * data.factorX);
+            let posY = (window.innerHeight / 2) - (data.angleY * sensitivity * data.factorY);
 
-            cursorX = Math.max(0, Math.min(window.innerWidth, cursorX));
-            cursorY = Math.max(0, Math.min(window.innerHeight, cursorY));
-
-            updateCursorPosition();
+            // Mantém o cursor dentro dos limites da tela
+            targetX = Math.max(0, Math.min(window.innerWidth, posX));
+            targetY = Math.max(0, Math.min(window.innerHeight, posY));
           } 
           else if (data.type === 'click') {
-            triggerVirtualClick(cursorX, cursorY);
+            triggerVirtualClick(currentX, currentY);
           }
         });
 
@@ -383,11 +405,6 @@
           qrModal.style.display = 'flex';
         });
       });
-
-      function updateCursorPosition() {
-        cursor.style.left = `${cursorX}px`;
-        cursor.style.top = `${cursorY}px`;
-      }
 
       function triggerVirtualClick(x, y) {
         cursor.classList.add('active');
@@ -409,25 +426,28 @@
 
 
     /* ==========================================================================
-       MODO CONTROLLER (AJUSTADO EIXO X e Y)
+       MODO CONTROLLER (PONTEIRO LASER - ORIENTAÇÃO ABSOLUTA)
        ========================================================================== */
     function initControllerMode(targetRoomId) {
       document.getElementById('controller-view').classList.remove('hidden');
 
       const statusEl = document.getElementById('controller-status');
       const btnSensors = document.getElementById('btn-enable-sensors');
+      const btnCalibrate = document.getElementById('btn-calibrate');
+      const instructionText = document.getElementById('instruction-text');
       const btnLeft = document.getElementById('btn-left-click');
       const btnRight = document.getElementById('btn-right-click');
       const sensSlider = document.getElementById('sens-slider');
       const chkInvertX = document.getElementById('chk-invert-x');
       const chkInvertY = document.getElementById('chk-invert-y');
 
-      let sensitivity = parseFloat(sensSlider.value);
       let conn = null;
 
-      sensSlider.addEventListener('input', (e) => {
-        sensitivity = parseFloat(e.target.value);
-      });
+      // Variáveis de calibragem da mira
+      let baseAlpha = null;
+      let baseBeta = null;
+      let currentAlpha = 0;
+      let currentBeta = 0;
 
       const peer = new Peer();
 
@@ -445,62 +465,75 @@
         });
       });
 
+      /* Solicita permissão dos sensores de orientação */
       btnSensors.addEventListener('click', async () => {
-        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
           try {
-            const state = await DeviceMotionEvent.requestPermission();
+            const state = await DeviceOrientationEvent.requestPermission();
             if (state === 'granted') {
-              startMotionController();
+              startLaserPointer();
             } else {
-              alert('Permissão negada.');
+              alert('Permissão dos sensores negada.');
             }
           } catch (e) {
             console.error(e);
           }
         } else {
-          startMotionController();
+          startLaserPointer();
         }
       });
 
-      function startMotionController() {
-        btnSensors.innerText = "Controle Ativo!";
-        btnSensors.style.background = "#22c55e";
+      /* Centraliza a mira na posição atual */
+      btnCalibrate.addEventListener('click', () => {
+        calibrateCenter();
+        if (navigator.vibrate) navigator.vibrate(40);
+      });
 
-        window.addEventListener('devicemotion', handleMotion);
+      function calibrateCenter() {
+        baseAlpha = currentAlpha;
+        baseBeta = currentBeta;
+        instructionText.innerHTML = "<b>Mira Centralizada!</b> Mova a ponta do celular para apontar na tela.";
       }
 
-      function handleMotion(event) {
-        if (!conn || !conn.open) return;
+      function startLaserPointer() {
+        btnSensors.classList.add('hidden');
+        btnCalibrate.classList.remove('hidden');
 
-        const rot = event.rotationRate;
-        if (!rot) return;
+        window.addEventListener('deviceorientation', handleOrientation);
+      }
 
-        /*
-           CORREÇÃO DOS EIXOS:
-           - Virar para os lados (guinar): rot.beta transmite o giro horizontal quando apontado pra frente.
-           - Inclinar para cima/baixo (arfagem): rot.alpha / rot.gamma transmite a inclinação vertical.
-        */
-        let rawHorizontal = rot.beta || 0;
-        let rawVertical = rot.alpha || rot.gamma || 0;
+      function handleOrientation(event) {
+        if (!conn || !conn.open || event.alpha === null || event.beta === null) return;
 
-        // Inversão dinâmica caso selecionado nas caixas de seleção
+        currentAlpha = event.alpha; // Rotação horizontal (Yaw / Azimute)
+        currentBeta = event.beta;   // Elevação vertical (Pitch)
+
+        // Na primeira leitura, ajusta o centro automaticamente
+        if (baseAlpha === null || baseBeta === null) {
+          calibrateCenter();
+        }
+
+        // Calcula a diferença angular horizontal (considerando a volta completa 0-360)
+        let diffAlpha = currentAlpha - baseAlpha;
+        while (diffAlpha < -180) diffAlpha += 360;
+        while (diffAlpha > 180) diffAlpha -= 360;
+
+        // Diferença angular vertical
+        let diffBeta = currentBeta - baseBeta;
+
+        // Fatores de inversão
         let factorX = chkInvertX.checked ? 1 : -1;
         let factorY = chkInvertY.checked ? -1 : 1;
 
-        let dx = rawHorizontal * sensitivity * 0.8 * factorX;
-        let dy = rawVertical * sensitivity * 0.8 * factorY;
-
-        // Zona morta (Deadzone para eliminar tremores leves)
-        if (Math.abs(dx) < 0.3) dx = 0;
-        if (Math.abs(dy) < 0.3) dy = 0;
-
-        if (dx !== 0 || dy !== 0) {
-          conn.send({
-            type: 'move',
-            dx: dx,
-            dy: dy
-          });
-        }
+        // Envia o ângulo offset do laser para o PC
+        conn.send({
+          type: 'pointer',
+          angleX: diffAlpha,
+          angleY: diffBeta,
+          sensitivity: parseFloat(sensSlider.value),
+          factorX: factorX,
+          factorY: factorY
+        });
       }
 
       function sendClick() {
