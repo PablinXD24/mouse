@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Air Mouse Pro - Single Pad</title>
 
-  <!-- CDNs (QRCode.js e PeerJS para comunicação WebRTC) -->
+  <!-- CDNs (QRCode.js e PeerJS) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
@@ -190,7 +190,6 @@
       justify-content: center;
     }
 
-    /* O QUADRADO ÚNICO PRINCIPAL */
     .master-square {
       width: 100%;
       max-width: 420px;
@@ -211,7 +210,7 @@
       box-shadow: 0 0 25px var(--accent-glow);
     }
 
-    /* Topo do Quadrado (Status + Atalhos Úteis) */
+    /* Topo do Quadrado */
     .square-header {
       display: flex;
       align-items: center;
@@ -262,7 +261,7 @@
       border-color: var(--accent-color);
     }
 
-    /* Área Central do Quadrado (Superfície Principal de Gestos) */
+    /* Área Central do Quadrado */
     .square-body {
       flex: 1;
       display: flex;
@@ -295,31 +294,39 @@
       box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
     }
 
-    /* Faixa de Scroll na Borda Direita do Quadrado */
+    /* Faixa Tátil de Scroll na Borda Direita do Quadrado */
     .scroll-edge-strip {
       position: absolute;
       right: 0;
       top: 0;
       bottom: 0;
-      width: 48px;
-      background: rgba(0, 0, 0, 0.2);
-      border-left: 1px dashed var(--border-color);
+      width: 54px;
+      background: rgba(0, 0, 0, 0.35);
+      border-left: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: center;
       writing-mode: vertical-rl;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      letter-spacing: 2px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: var(--accent-color);
+      letter-spacing: 3px;
+      z-index: 10;
+      touch-action: none;
     }
 
-    /* Base do Quadrado (Divisões Táteis dos Botões do Mouse) */
+    .scroll-edge-strip.active {
+      background: var(--btn-active);
+      color: #ffffff;
+    }
+
+    /* Base do Quadrado (Lados Invertidos) */
     .square-footer-buttons {
       display: grid;
       grid-template-columns: 1.2fr 0.8fr 1.2fr;
-      height: 90px;
+      height: 95px;
       border-top: 1px solid var(--border-color);
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0, 0, 0, 0.25);
     }
 
     .sq-mouse-btn {
@@ -377,16 +384,16 @@
         <h2>Área de Teste de Funções</h2>
         
         <div class="card-grid">
-          <button class="test-btn" onclick="highlightCard(this, 'Clique Esquerdo')">Botão 1 (Clique)</button>
-          <button class="test-btn" oncontextmenu="highlightCard(this, 'Clique Direito'); return false;">Botão 2 (Menu Contexto)</button>
+          <button class="test-btn" onclick="highlightCard(this, 'Clique Comum (Direito na Tela)')">Botão 1 (Clique Comum)</button>
+          <button class="test-btn" oncontextmenu="highlightCard(this, 'Clique Secundário (Esquerdo na Tela)'); return false;">Botão 2 (Menu Contexto)</button>
           <button class="test-btn" onauxclick="highlightCard(this, 'Clique Central M3')">Botão 3 (M3)</button>
         </div>
 
         <h3>Teste de Rolagem (Scroll):</h3>
         <div class="scroll-test-area">
-          <p>1. Deslize o dedo na borda direita do quadrado do celular...</p>
+          <p>1. Arraste o dedo na barra de scroll na borda direita da tela do celular...</p>
           <p>2. Linha de teste de rolagem...</p>
-          <p>3. Rague a página para cima/baixo...</p>
+          <p>3. Role a página para cima ou para baixo...</p>
           <p>4. Conteúdo de teste carregado...</p>
           <p>5. Mais linhas aqui...</p>
           <p>6. Quase no final!</p>
@@ -402,7 +409,6 @@
   <!-- ================= VISTA DO CELULAR (QUADRADO ÚNICO) ================= -->
   <div id="controller-view" class="view hidden">
     
-    <!-- QUADRADO INTEGRADO MESTRE -->
     <div id="master-square" class="master-square">
       
       <!-- Topo Interno do Quadrado -->
@@ -413,9 +419,9 @@
         </div>
 
         <div class="header-actions">
-          <button id="btn-nav-back" class="sq-btn-mini">◀</button>
+          <button id="btn-nav-back" class="sq-btn-mini">◀ Voltar</button>
           <button id="btn-calibrate" class="sq-btn-mini calibrate">🎯 Mira</button>
-          <button id="btn-nav-forward" class="sq-btn-mini">▶</button>
+          <button id="btn-nav-forward" class="sq-btn-mini">Avançar ▶</button>
         </div>
       </div>
 
@@ -424,31 +430,34 @@
         
         <div id="hint-container" class="gesture-hint-box">
           <div style="font-size: 2.5rem;">📱🎯</div>
-          <p id="instruction-text">Aponte a ponta do celular para a tela e ative os sensores abaixo:</p>
+          <p id="instruction-text">Aponte o celular para a tela e toque abaixo para ativar:</p>
           <button id="btn-enable-sensors" class="activate-btn-large">Ativar Sensores</button>
         </div>
 
-        <!-- Faixa lateral de rolagem (Scroll Strip) -->
+        <!-- Barra de Scroll Dedicada -->
         <div id="scroll-strip" class="scroll-edge-strip">
-          SCROLL ↕
+          ▲ SCROLL ▼
         </div>
       </div>
 
-      <!-- Rodapé Interno do Quadrado (Zonas dos Botões de Clique) -->
+      <!-- Rodapé com Lados Invertidos conforme Solicitado -->
       <div class="square-footer-buttons">
-        <button id="btn-left-click" class="sq-mouse-btn">
-          <span>ESQUERDO</span>
-          <span class="sq-subtext">Segurar = Drag</span>
+        <!-- LADO ESQUERDO: Clique Direito (Secundário) -->
+        <button id="btn-right-click" class="sq-mouse-btn">
+          <span>CLIQUE DIREITO</span>
+          <span class="sq-subtext">Menu Contexto</span>
         </button>
 
+        <!-- CENTRO: Clique da Rodinha (M3) -->
         <button id="btn-middle-click" class="sq-mouse-btn">
           <span>M3</span>
           <span class="sq-subtext">Scroll Click</span>
         </button>
 
-        <button id="btn-right-click" class="sq-mouse-btn">
-          <span>DIREITO</span>
-          <span class="sq-subtext">Menu</span>
+        <!-- LADO DIREITO: Clique Comum (Primário / Drag) -->
+        <button id="btn-left-click" class="sq-mouse-btn">
+          <span>CLIQUE COMUM</span>
+          <span class="sq-subtext">Segurar = Arrastar</span>
         </button>
       </div>
 
@@ -482,9 +491,7 @@
       let targetY = window.innerHeight / 2;
       let currentX = window.innerWidth / 2;
       let currentY = window.innerHeight / 2;
-      let isMouseDown = false;
 
-      // Renderização contínua e suave do ponteiro
       function renderLoop() {
         currentX += (targetX - currentX) * 0.25;
         currentY += (targetY - currentY) * 0.25;
@@ -516,7 +523,6 @@
         }, 800);
 
         conn.on('data', (data) => {
-          /* MOVIMENTO DE MIRA */
           if (data.type === 'pointer') {
             const sensitivity = data.sensitivity || 35;
             let posX = (window.innerWidth / 2) - (data.angleX * sensitivity);
@@ -525,31 +531,23 @@
             targetX = Math.max(0, Math.min(window.innerWidth, posX));
             targetY = Math.max(0, Math.min(window.innerHeight, posY));
           } 
-          /* CLIQUE ESQUERDO */
           else if (data.type === 'click') {
             triggerMouseEvent('click', currentX, currentY);
           }
-          /* INÍCIO DE DRAG (MOUSEDOWN) */
           else if (data.type === 'mousedown') {
-            isMouseDown = true;
             cursor.classList.add('dragging');
             triggerMouseEvent('mousedown', currentX, currentY);
           }
-          /* FIM DE DRAG (MOUSEUP) */
           else if (data.type === 'mouseup') {
-            isMouseDown = false;
             cursor.classList.remove('dragging');
             triggerMouseEvent('mouseup', currentX, currentY);
           }
-          /* CLIQUE DIREITO */
           else if (data.type === 'rightclick') {
             triggerMouseEvent('contextmenu', currentX, currentY);
           }
-          /* CLIQUE CENTRAL (M3) */
           else if (data.type === 'middleclick') {
             triggerMouseEvent('auxclick', currentX, currentY, { button: 1 });
           }
-          /* ROLAGEM (SCROLL) */
           else if (data.type === 'scroll') {
             const targetEl = document.elementFromPoint(currentX, currentY) || window;
             if (targetEl.scrollBy) {
@@ -558,7 +556,6 @@
               window.scrollBy({ top: data.deltaY, behavior: 'smooth' });
             }
           }
-          /* NAVEGAÇÃO VOLTAR / AVANÇAR */
           else if (data.type === 'nav') {
             if (data.action === 'back') history.back();
             if (data.action === 'forward') history.forward();
@@ -652,7 +649,7 @@
         });
       });
 
-      /* Ativação do Sensor de Orientação */
+      /* Ativação dos Sensores */
       btnSensors.addEventListener('click', async () => {
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
           try {
@@ -684,7 +681,7 @@
       function startLaserPointer() {
         btnSensors.style.display = 'none';
         masterSquare.classList.add('active-sensor');
-        instructionText.innerHTML = "<b>Ponteiro Ativo!</b> Mova o celular no ar para controlar o cursor.";
+        instructionText.innerHTML = "<b>Ponteiro Ativo!</b> Mova o celular para controlar o cursor na tela.";
         window.addEventListener('deviceorientation', handleOrientation);
       }
 
@@ -712,30 +709,53 @@
         });
       }
 
-      /* GESTOS DENTRO DA SUPERFÍCIE TOUCH DO QUADRADO */
+      /* LÓGICA DE SCROLL PELA BARRA DE SCROLL */
+      let lastTouchY = 0;
+
+      scrollStrip.addEventListener('touchstart', (e) => {
+        e.stopPropagation();
+        lastTouchY = e.touches[0].clientY;
+        scrollStrip.classList.add('active');
+      });
+
+      scrollStrip.addEventListener('touchmove', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const currentY = e.touches[0].clientY;
+        const deltaY = (lastTouchY - currentY) * 3; // Sensibilidade do Scroll
+        lastTouchY = currentY;
+
+        if (conn && conn.open && Math.abs(deltaY) > 1) {
+          conn.send({ type: 'scroll', deltaY: deltaY });
+        }
+      });
+
+      scrollStrip.addEventListener('touchend', (e) => {
+        e.stopPropagation();
+        scrollStrip.classList.remove('active');
+      });
+
+      /* GESTOS DE TOQUE NA ÁREA CENTRAL (INVERTIDOS CONFORME SOLICITADO) */
       let dragTimer = null;
       let isDragging = false;
       let touchStartTime = 0;
 
       touchSurface.addEventListener('touchstart', (e) => {
-        // Ignora se o toque for na faixa lateral de scroll ou botão de ativar
         if (e.target === scrollStrip || e.target === btnSensors) return;
 
         touchStartTime = Date.now();
+        const touchX = e.touches[0].clientX;
+        const surfaceWidth = touchSurface.clientWidth;
 
-        // Toque com 2 dedos = Clique Direito
-        if (e.touches.length === 2) {
-          if (conn && conn.open) conn.send({ type: 'rightclick' });
-          vibrate(30);
-          return;
+        // Lado Direito da Superfície = Clique Comum (com suporte a drag)
+        if (touchX > surfaceWidth / 2) {
+          dragTimer = setTimeout(() => {
+            isDragging = true;
+            if (conn && conn.open) conn.send({ type: 'mousedown' });
+            vibrate([30, 30]);
+          }, 250);
         }
-
-        // Segurar por mais de 250ms = Ativa Arrastar (Drag & Drop)
-        dragTimer = setTimeout(() => {
-          isDragging = true;
-          if (conn && conn.open) conn.send({ type: 'mousedown' });
-          vibrate([30, 30]);
-        }, 250);
       });
 
       touchSurface.addEventListener('touchend', (e) => {
@@ -748,32 +768,25 @@
             conn.send({ type: 'mouseup' });
             isDragging = false;
           } 
-          // Toque rápido (menos de 200ms) = Clique Esquerdo
-          else if (Date.now() - touchStartTime < 200) {
-            conn.send({ type: 'click' });
-            vibrate(20);
+          else if (Date.now() - touchStartTime < 220) {
+            const touchX = e.changedTouches[0].clientX;
+            const surfaceWidth = touchSurface.clientWidth;
+
+            if (touchX > surfaceWidth / 2) {
+              // Clique no Lado Direito = Clique Comum
+              conn.send({ type: 'click' });
+              vibrate(20);
+            } else {
+              // Clique no Lado Esquerdo = Clique Direito (Menu)
+              conn.send({ type: 'rightclick' });
+              vibrate(30);
+            }
           }
         }
       });
 
-      /* ROLAGEM NA FAIXA LATERAL DIREITA DO QUADRADO */
-      let lastTouchY = 0;
-
-      scrollStrip.addEventListener('touchstart', (e) => {
-        lastTouchY = e.touches[0].clientY;
-      });
-
-      scrollStrip.addEventListener('touchmove', (e) => {
-        const currentY = e.touches[0].clientY;
-        const deltaY = (lastTouchY - currentY) * 2.5;
-        lastTouchY = currentY;
-
-        if (conn && conn.open && Math.abs(deltaY) > 2) {
-          conn.send({ type: 'scroll', deltaY: deltaY });
-        }
-      });
-
-      /* BOTÕES DE CLIQUE NO RODAPÉ DO QUADRADO */
+      /* LÓGICA DOS BOTÕES INVERTIDOS NO RODAPÉ DO QUADRADO */
+      // LADO DIREITO (CLIQUE COMUM)
       btnLeft.addEventListener('touchstart', (e) => {
         e.preventDefault();
         btnLeft.classList.add('pressed');
@@ -801,17 +814,19 @@
         }
       });
 
+      // LADO ESQUERDO (CLIQUE DIREITO / MENU)
       btnRight.addEventListener('click', () => {
         if (conn && conn.open) conn.send({ type: 'rightclick' });
         vibrate(30);
       });
 
+      // CENTRO (M3)
       btnMiddle.addEventListener('click', () => {
         if (conn && conn.open) conn.send({ type: 'middleclick' });
         vibrate(30);
       });
 
-      /* BOTÕES DE NAVEGAÇÃO NO TOPO DO QUADRADO */
+      /* NAVEGAÇÃO */
       btnNavBack.addEventListener('click', () => {
         if (conn && conn.open) conn.send({ type: 'nav', action: 'back' });
         vibrate(25);
