@@ -70,7 +70,7 @@
       left: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
-      z-index: 99999; /* Z-Index máximo para o mouse funcionar por cima do vídeo */
+      z-index: 99999; /* Z-Index máximo para funcionar por cima do player de vídeo */
       box-shadow: 0 0 20px var(--accent-color);
       transition: background-color 0.15s, transform 0.1s, box-shadow 0.15s;
     }
@@ -87,7 +87,7 @@
       box-shadow: 0 0 22px #f59e0b;
     }
 
-    /* Overlay de Mídia / Player do Desktop */
+    /* PLAYER DE VÍDEO PROFISSIONAL (DESKTOP) */
     .media-overlay {
       position: fixed;
       inset: 0;
@@ -98,6 +98,24 @@
       align-items: center;
       justify-content: center;
       animation: fadeIn 0.3s ease-out;
+      overflow: hidden;
+    }
+
+    .ambient-glow {
+      position: absolute;
+      inset: -10%;
+      background: radial-gradient(circle at center, rgba(56, 189, 248, 0.15), transparent 70%);
+      filter: blur(80px);
+      pointer-events: none;
+    }
+
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .remote-video-player {
@@ -105,6 +123,108 @@
       height: 100%;
       object-fit: contain;
       background: #000;
+      cursor: pointer;
+    }
+
+    /* Controles Customizados Profissionais */
+    .custom-player-controls {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 900px;
+      background: rgba(15, 20, 32, 0.85);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 0.8rem 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      transition: opacity 0.3s ease;
+      z-index: 550;
+    }
+
+    .player-progress-bar-wrapper {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .player-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent-color);
+      border-radius: 4px;
+      transition: width 0.1s linear;
+    }
+
+    .player-controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-primary);
+    }
+
+    .player-left-controls, .player-right-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .player-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .player-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--accent-color);
+    }
+
+    .player-time {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      font-mono: tabular-nums;
+    }
+
+    /* HUD Feedback Visual em Tela */
+    .player-hud-toast {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      background: rgba(15, 20, 32, 0.9);
+      border: 1px solid var(--accent-color);
+      color: var(--accent-color);
+      padding: 1rem 1.8rem;
+      border-radius: 30px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      box-shadow: 0 0 30px var(--accent-glow);
+      z-index: 580;
+    }
+
+    .player-hud-toast.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
     }
 
     .close-media-btn {
@@ -112,11 +232,12 @@
       top: 20px;
       right: 20px;
       z-index: 600;
-      padding: 10px 18px;
+      padding: 8px 16px;
       background: rgba(18, 22, 33, 0.85);
       border: 1px solid var(--card-border);
       color: white;
       border-radius: 20px;
+      font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
       backdrop-filter: blur(10px);
@@ -325,7 +446,6 @@
       box-shadow: 0 0 35px var(--accent-glow);
     }
 
-    /* Topo do Quadrado */
     .square-header {
       display: flex;
       align-items: center;
@@ -384,7 +504,6 @@
       border-color: rgba(56, 189, 248, 0.3);
     }
 
-    /* Barra de Progresso de Envio de Arquivo */
     .transfer-progress-bar-container {
       padding: 0.6rem 1rem;
       background: rgba(0, 0, 0, 0.4);
@@ -416,7 +535,6 @@
       transition: width 0.1s linear;
     }
 
-    /* Barra de Teclado Flutuante no Celular */
     .keyboard-bar {
       display: flex;
       align-items: center;
@@ -462,19 +580,6 @@
       transition: background 0.15s;
     }
 
-    .keyboard-action-btn:active {
-      background: rgba(239, 68, 68, 0.2);
-      border-color: rgba(239, 68, 68, 0.4);
-      color: #f87171;
-    }
-
-    .keyboard-action-btn.send-btn:active {
-      background: rgba(56, 189, 248, 0.2);
-      border-color: var(--accent-color);
-      color: var(--accent-color);
-    }
-
-    /* Painel D-Pad */
     .dpad-bar {
       display: flex;
       justify-content: center;
@@ -524,7 +629,6 @@
       border-color: rgba(56, 189, 248, 0.3);
     }
 
-    /* Área Central Touch */
     .square-body {
       flex: 1;
       display: flex;
@@ -575,7 +679,6 @@
       transform: scale(0.96);
     }
 
-    /* Faixa de Scroll Lateral Clean */
     .scroll-edge-strip {
       position: absolute;
       right: 0;
@@ -615,7 +718,6 @@
       background: var(--accent-color);
     }
 
-    /* Rodapé do Quadrado */
     .square-footer-buttons {
       display: grid;
       grid-template-columns: 1.2fr 0.8fr 1.2fr;
@@ -660,13 +762,39 @@
 
   <!-- ================= VISTA DO DESKTOP (HOST) ================= -->
   <div id="host-view" class="view hidden">
-    <!-- Cursor Virtual na tela do PC -->
+    <!-- Virtual Cursor -->
     <div id="virtual-cursor"></div>
 
-    <!-- Overlay de Transmissão de Mídia / Player no Desktop -->
+    <!-- OVERLAY DE VÍDEO PROFISSIONAL (DESKTOP) -->
     <div id="media-overlay" class="media-overlay hidden">
+      <div class="ambient-glow"></div>
       <button id="btn-close-media" class="close-media-btn">✕ Fechar Vídeo</button>
-      <video id="remote-video" class="remote-video-player" autoplay playsinline controls></video>
+      
+      <!-- Toast Visual HUD de feedback -->
+      <div id="player-toast" class="player-hud-toast">PLAY</div>
+
+      <div class="video-wrapper">
+        <video id="remote-video" class="remote-video-player" autoplay playsinline></video>
+        
+        <!-- Barra de Controles Customizada -->
+        <div id="custom-controls" class="custom-player-controls">
+          <div id="progress-wrapper" class="player-progress-bar-wrapper">
+            <div id="player-progress-fill" class="player-progress-fill"></div>
+          </div>
+          
+          <div class="player-controls-row">
+            <div class="player-left-controls">
+              <button id="btn-player-play" class="player-btn">▶</button>
+              <span id="player-time-text" class="player-time">00:00 / 00:00</span>
+            </div>
+            
+            <div class="player-right-controls">
+              <button id="btn-player-mute" class="player-btn">🔊</button>
+              <button id="btn-player-fullscreen" class="player-btn">⛶</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="qr-modal" class="modal">
@@ -718,7 +846,7 @@
   <!-- ================= VISTA DO CELULAR (QUADRADO ÚNICO CLEAN) ================= -->
   <div id="controller-view" class="view hidden">
     
-    <!-- Elemento Oculto de Seleção de Arquivo -->
+    <!-- Input Oculto para Seleção de Arquivo -->
     <input type="file" id="media-file-input" accept="video/*,audio/*" style="display: none;" />
 
     <div id="master-square" class="master-square">
@@ -731,7 +859,7 @@
         </div>
 
         <div class="header-actions">
-          <button id="btn-camera-stream" class="sq-btn-mini" title="Câmera ao Vivo">📷</button>
+          <button id="btn-mirror-screen" class="sq-btn-mini" title="Espelhar Tela">📺</button>
           <button id="btn-stream-file" class="sq-btn-mini" title="Transmitir Filme/Vídeo">🎬</button>
           <button id="btn-toggle-keyboard" class="sq-btn-mini">⌨️</button>
           <button id="btn-toggle-dpad" class="sq-btn-mini">🧭</button>
@@ -741,7 +869,7 @@
 
       <!-- Barra de Progresso de Envio de Filme/Vídeo -->
       <div id="transfer-progress-container" class="transfer-progress-bar-container hidden">
-        <span id="transfer-status-text" class="transfer-text">Enviando vídeo para o PC...</span>
+        <span id="transfer-status-text" class="transfer-text">Enviando filme ao PC...</span>
         <div class="progress-track">
           <div id="transfer-progress-fill" class="progress-fill"></div>
         </div>
@@ -838,6 +966,15 @@
       const remoteVideo = document.getElementById('remote-video');
       const btnCloseMedia = document.getElementById('btn-close-media');
 
+      // Elementos do Player Customizado
+      const playerProgressFill = document.getElementById('player-progress-fill');
+      const progressWrapper = document.getElementById('progress-wrapper');
+      const btnPlayerPlay = document.getElementById('btn-player-play');
+      const btnPlayerMute = document.getElementById('btn-player-mute');
+      const btnPlayerFullscreen = document.getElementById('btn-player-fullscreen');
+      const playerTimeText = document.getElementById('player-time-text');
+      const playerToast = document.getElementById('player-toast');
+
       let targetX = window.innerWidth / 2;
       let targetY = window.innerHeight / 2;
       let currentX = window.innerWidth / 2;
@@ -857,11 +994,71 @@
       }
       requestAnimationFrame(renderLoop);
 
+      /* LÓGICA DO PLAYER PROFISSIONAL DE VÍDEO */
+      function showToast(msg) {
+        playerToast.textContent = msg;
+        playerToast.classList.add('show');
+        clearTimeout(playerToast.timer);
+        playerToast.timer = setTimeout(() => {
+          playerToast.classList.remove('show');
+        }, 800);
+      }
+
+      function togglePlayPause() {
+        if (remoteVideo.paused) {
+          remoteVideo.play();
+          btnPlayerPlay.textContent = '❚❚';
+          showToast('▶ PLAY');
+        } else {
+          remoteVideo.pause();
+          btnPlayerPlay.textContent = '▶';
+          showToast('❚❚ PAUSE');
+        }
+      }
+
+      function formatTime(seconds) {
+        if (isNaN(seconds)) return '00:00';
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+      }
+
+      remoteVideo.addEventListener('timeupdate', () => {
+        if (!remoteVideo.duration) return;
+        const pct = (remoteVideo.currentTime / remoteVideo.duration) * 100;
+        playerProgressFill.style.width = `${pct}%`;
+        playerTimeText.textContent = `${formatTime(remoteVideo.currentTime)} / ${formatTime(remoteVideo.duration)}`;
+      });
+
+      progressWrapper.addEventListener('click', (e) => {
+        const rect = progressWrapper.getBoundingClientRect();
+        const pos = (e.clientX - rect.left) / rect.width;
+        remoteVideo.currentTime = pos * remoteVideo.duration;
+      });
+
+      btnPlayerPlay.addEventListener('click', togglePlayPause);
+      remoteVideo.addEventListener('click', togglePlayPause);
+
+      btnPlayerMute.addEventListener('click', () => {
+        remoteVideo.muted = !remoteVideo.muted;
+        btnPlayerMute.textContent = remoteVideo.muted ? '🔇' : '🔊';
+        showToast(remoteVideo.muted ? 'MUTADO' : 'SOM ATIVO');
+      });
+
+      btnPlayerFullscreen.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          mediaOverlay.requestFullscreen().catch(err => console.error(err));
+        } else {
+          document.exitFullscreen();
+        }
+      });
+
       btnCloseMedia.addEventListener('click', () => {
         mediaOverlay.classList.add('hidden');
         remoteVideo.pause();
         remoteVideo.src = '';
         remoteVideo.srcObject = null;
+        if (document.fullscreenElement) document.exitFullscreen();
       });
 
       const peer = new Peer();
@@ -875,14 +1072,16 @@
         });
       });
 
-      /* ATENDIMENTO DE TRANSMISSÃO DE CÂMERA AO VIVO */
+      /* ATENDIMENTO DE ESPELHAMENTO DE TELA (WEBRTC STREAM) */
       peer.on('call', (call) => {
         call.answer();
         call.on('stream', (remoteStream) => {
+          remoteVideo.src = '';
           remoteVideo.srcObject = remoteStream;
           remoteVideo.play();
           mediaOverlay.classList.remove('hidden');
-          logAction('Transmissão de Câmera/Vídeo iniciada.');
+          btnPlayerPlay.textContent = '❚❚';
+          logAction('Espelhamento de Tela Ativo!');
         });
       });
 
@@ -921,16 +1120,24 @@
             triggerMouseEvent('auxclick', currentX, currentY, { button: 1 });
           }
           else if (data.type === 'scroll') {
-            scrollElementUnderCursor(currentX, currentY, data.deltaY);
+            // Se o vídeo estiver ativo, o scroll altera o volume do player!
+            if (!mediaOverlay.classList.contains('hidden')) {
+              let newVol = remoteVideo.volume - (data.deltaY * 0.0015);
+              newVol = Math.max(0, Math.min(1, newVol));
+              remoteVideo.volume = newVol;
+              showToast(`🔊 ${Math.round(newVol * 100)}%`);
+            } else {
+              scrollElementUnderCursor(currentX, currentY, data.deltaY);
+            }
           }
           else if (data.type === 'keyboard') {
             handleKeyboardInput(data);
           }
-          /* RECEBIMENTO E MONTAGEM DO FILME / VÍDEO POR CHUNKS WEBRTC */
+          /* RECEBIMENTO E EXIBIÇÃO DE FILME LOCAL */
           else if (data.type === 'file_start') {
             fileBuffer = [];
             fileMeta = data;
-            logAction(`Iniciando recebimento de "${data.name}" (${(data.size / (1024*1024)).toFixed(1)} MB)...`);
+            logAction(`Recebendo "${data.name}" (${(data.size / (1024*1024)).toFixed(1)} MB)...`);
           }
           else if (data.type === 'file_chunk') {
             fileBuffer.push(data.data);
@@ -942,7 +1149,8 @@
             remoteVideo.src = videoUrl;
             mediaOverlay.classList.remove('hidden');
             remoteVideo.play();
-            logAction(`Filme "${fileMeta.name}" carregado e em exibição no PC!`);
+            btnPlayerPlay.textContent = '❚❚';
+            logAction(`Filme "${fileMeta.name}" pronto e em execução!`);
             fileBuffer = [];
           }
           else if (data.type === 'stop_media') {
@@ -965,7 +1173,33 @@
         });
       });
 
+      /* COMANDOS DO AIR MOUSE E D-PAD NO PLAYER */
       function handleKeyboardInput(data) {
+        let isMediaActive = !mediaOverlay.classList.contains('hidden');
+
+        // Se o player estiver ativo, o D-pad e as teclas de atalho passam a controlar o filme
+        if (isMediaActive) {
+          if (data.action === 'arrow') {
+            if (data.key === 'ArrowLeft') {
+              remoteVideo.currentTime = Math.max(0, remoteVideo.currentTime - 5);
+              showToast('⏪ -5s');
+            } else if (data.key === 'ArrowRight') {
+              remoteVideo.currentTime = Math.min(remoteVideo.duration, remoteVideo.currentTime + 5);
+              showToast('⏩ +5s');
+            } else if (data.key === 'ArrowUp') {
+              remoteVideo.volume = Math.min(1, remoteVideo.volume + 0.1);
+              showToast(`🔊 ${Math.round(remoteVideo.volume * 100)}%`);
+            } else if (data.key === 'ArrowDown') {
+              remoteVideo.volume = Math.max(0, remoteVideo.volume - 0.1);
+              showToast(`🔉 ${Math.round(remoteVideo.volume * 100)}%`);
+            }
+            return;
+          } else if (data.action === 'enter') {
+            togglePlayPause();
+            return;
+          }
+        }
+
         let activeEl = document.activeElement;
 
         if (!activeEl || activeEl === document.body || activeEl === document.documentElement) {
@@ -1131,7 +1365,7 @@
 
 
     /* ==========================================================================
-       MODO CONTROLLER (CELULAR - TRANSMISSÃO DE VÍDEO & CÂMERA)
+       MODO CONTROLLER (CELULAR - MIRROR SCREEN & FILE STREAM)
        ========================================================================== */
     function initControllerMode(targetRoomId) {
       document.getElementById('controller-view').classList.remove('hidden');
@@ -1145,7 +1379,7 @@
       const btnCalibrate = document.getElementById('btn-calibrate');
       const instructionText = document.getElementById('instruction-text');
 
-      const btnCameraStream = document.getElementById('btn-camera-stream');
+      const btnMirrorScreen = document.getElementById('btn-mirror-screen');
       const btnStreamFile = document.getElementById('btn-stream-file');
       const mediaFileInput = document.getElementById('media-file-input');
       const progressContainer = document.getElementById('transfer-progress-container');
@@ -1190,36 +1424,46 @@
         });
       });
 
-      /* 1. TRANSMISSÃO DE CÂMERA AO VIVO EM HD */
-      btnCameraStream.addEventListener('click', async () => {
+      /* 1. ESPELHAMENTO DE TELA (CORRIGIDO PARA NAVEGADORES MÓVEIS) */
+      btnMirrorScreen.addEventListener('click', async () => {
         vibrate(30);
-        if (btnCameraStream.classList.contains('active')) {
+        if (btnMirrorScreen.classList.contains('active')) {
           if (activeCall) activeCall.close();
-          btnCameraStream.classList.remove('active');
+          btnMirrorScreen.classList.remove('active');
           if (conn && conn.open) conn.send({ type: 'stop_media' });
           return;
         }
 
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
-            audio: true
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+            alert('Atenção: O espelhamento de tela exige que a página esteja em HTTPS ou no Chrome Android.');
+            return;
+          }
+
+          // Ajuste crítico de restrições para compatibilidade com Chrome Mobile
+          const stream = await navigator.mediaDevices.getDisplayMedia({
+            video: {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              frameRate: { max: 30 }
+            },
+            audio: false // audio: false é obrigatório para evitar recusa no Android
           });
 
           activeCall = peer.call(targetRoomId, stream);
-          btnCameraStream.classList.add('active');
+          btnMirrorScreen.classList.add('active');
 
           stream.getVideoTracks()[0].onended = () => {
-            btnCameraStream.classList.remove('active');
+            btnMirrorScreen.classList.remove('active');
             if (conn && conn.open) conn.send({ type: 'stop_media' });
           };
         } catch (err) {
           console.error(err);
-          alert('Erro ao acessar a câmera/microfone do celular.');
+          alert('Não foi possível iniciar o espelhamento. Certifique-se de autorizar a gravação de tela.');
         }
       });
 
-      /* 2. TRANSMISSÃO ROBUSTA DE FILMES E VÍDEOS POR DADOS WEBRTC */
+      /* 2. TRANSMISSÃO DE FILMES E VÍDEOS POR DADOS */
       btnStreamFile.addEventListener('click', () => {
         vibrate(30);
         mediaFileInput.click();
@@ -1233,7 +1477,7 @@
       });
 
       function sendVideoFileInChunks(file) {
-        const CHUNK_SIZE = 64 * 1024; // Pedaços otimizados de 64KB
+        const CHUNK_SIZE = 64 * 1024;
         const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
         let currentChunk = 0;
 
@@ -1273,7 +1517,7 @@
             setTimeout(readNextChunk, 1);
           } else {
             conn.send({ type: 'file_end' });
-            progressStatusText.textContent = 'Transmissão Concluída!';
+            progressStatusText.textContent = 'Filme Transmitido com Sucesso!';
             vibrate([40, 40]);
             setTimeout(() => {
               progressContainer.classList.add('hidden');
