@@ -70,7 +70,7 @@
       left: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
-      z-index: 99999; /* Z-Index elevado para o mouse funcionar por cima da mídia */
+      z-index: 99999; /* Z-Index máximo para o mouse funcionar por cima do vídeo */
       box-shadow: 0 0 20px var(--accent-color);
       transition: background-color 0.15s, transform 0.1s, box-shadow 0.15s;
     }
@@ -87,7 +87,7 @@
       box-shadow: 0 0 22px #f59e0b;
     }
 
-    /* Container de Transmissão de Mídia / Mirror no Desktop */
+    /* Overlay de Mídia / Player do Desktop */
     .media-overlay {
       position: fixed;
       inset: 0;
@@ -113,7 +113,7 @@
       right: 20px;
       z-index: 600;
       padding: 10px 18px;
-      background: rgba(18, 22, 33, 0.8);
+      background: rgba(18, 22, 33, 0.85);
       border: 1px solid var(--card-border);
       color: white;
       border-radius: 20px;
@@ -384,6 +384,38 @@
       border-color: rgba(56, 189, 248, 0.3);
     }
 
+    /* Barra de Progresso de Envio de Arquivo */
+    .transfer-progress-bar-container {
+      padding: 0.6rem 1rem;
+      background: rgba(0, 0, 0, 0.4);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .transfer-text {
+      font-size: 0.75rem;
+      color: var(--accent-color);
+      font-weight: 600;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent-color);
+      transition: width 0.1s linear;
+    }
+
     /* Barra de Teclado Flutuante no Celular */
     .keyboard-bar {
       display: flex;
@@ -631,9 +663,9 @@
     <!-- Cursor Virtual na tela do PC -->
     <div id="virtual-cursor"></div>
 
-    <!-- Overlay de Transmissão de Mídia / Mirror Screen -->
+    <!-- Overlay de Transmissão de Mídia / Player no Desktop -->
     <div id="media-overlay" class="media-overlay hidden">
-      <button id="btn-close-media" class="close-media-btn">✕ Fechar Transmissão</button>
+      <button id="btn-close-media" class="close-media-btn">✕ Fechar Vídeo</button>
       <video id="remote-video" class="remote-video-player" autoplay playsinline controls></video>
     </div>
 
@@ -686,9 +718,8 @@
   <!-- ================= VISTA DO CELULAR (QUADRADO ÚNICO CLEAN) ================= -->
   <div id="controller-view" class="view hidden">
     
-    <!-- Elementos Ocultos de Mídia no Celular -->
+    <!-- Elemento Oculto de Seleção de Arquivo -->
     <input type="file" id="media-file-input" accept="video/*,audio/*" style="display: none;" />
-    <video id="local-video-player" playsinline muted style="display: none;"></video>
 
     <div id="master-square" class="master-square">
       
@@ -700,11 +731,19 @@
         </div>
 
         <div class="header-actions">
-          <button id="btn-mirror-screen" class="sq-btn-mini" title="Espelhar Tela">📺</button>
+          <button id="btn-camera-stream" class="sq-btn-mini" title="Câmera ao Vivo">📷</button>
           <button id="btn-stream-file" class="sq-btn-mini" title="Transmitir Filme/Vídeo">🎬</button>
           <button id="btn-toggle-keyboard" class="sq-btn-mini">⌨️</button>
           <button id="btn-toggle-dpad" class="sq-btn-mini">🧭</button>
           <button id="btn-calibrate" class="sq-btn-mini calibrate">🎯 Mira</button>
+        </div>
+      </div>
+
+      <!-- Barra de Progresso de Envio de Filme/Vídeo -->
+      <div id="transfer-progress-container" class="transfer-progress-bar-container hidden">
+        <span id="transfer-status-text" class="transfer-text">Enviando vídeo para o PC...</span>
+        <div class="progress-track">
+          <div id="transfer-progress-fill" class="progress-fill"></div>
         </div>
       </div>
 
@@ -804,6 +843,9 @@
       let currentX = window.innerWidth / 2;
       let currentY = window.innerHeight / 2;
 
+      let fileBuffer = [];
+      let fileMeta = null;
+
       function renderLoop() {
         currentX += (targetX - currentX) * 0.25;
         currentY += (targetY - currentY) * 0.25;
@@ -818,6 +860,7 @@
       btnCloseMedia.addEventListener('click', () => {
         mediaOverlay.classList.add('hidden');
         remoteVideo.pause();
+        remoteVideo.src = '';
         remoteVideo.srcObject = null;
       });
 
@@ -832,14 +875,14 @@
         });
       });
 
-      // RECEBIMENTO DE TRANSMISSÃO DE VÍDEO / MIRROR SCREEN
+      /* ATENDIMENTO DE TRANSMISSÃO DE CÂMERA AO VIVO */
       peer.on('call', (call) => {
-        call.answer(); // Atende a chamada de vídeo recebida do celular
+        call.answer();
         call.on('stream', (remoteStream) => {
           remoteVideo.srcObject = remoteStream;
           remoteVideo.play();
           mediaOverlay.classList.remove('hidden');
-          logAction('Transmissão de Mídia/Mirror iniciada.');
+          logAction('Transmissão de Câmera/Vídeo iniciada.');
         });
       });
 
@@ -883,9 +926,29 @@
           else if (data.type === 'keyboard') {
             handleKeyboardInput(data);
           }
+          /* RECEBIMENTO E MONTAGEM DO FILME / VÍDEO POR CHUNKS WEBRTC */
+          else if (data.type === 'file_start') {
+            fileBuffer = [];
+            fileMeta = data;
+            logAction(`Iniciando recebimento de "${data.name}" (${(data.size / (1024*1024)).toFixed(1)} MB)...`);
+          }
+          else if (data.type === 'file_chunk') {
+            fileBuffer.push(data.data);
+          }
+          else if (data.type === 'file_end') {
+            const blob = new Blob(fileBuffer, { type: fileMeta.mime || 'video/mp4' });
+            const videoUrl = URL.createObjectURL(blob);
+            remoteVideo.srcObject = null;
+            remoteVideo.src = videoUrl;
+            mediaOverlay.classList.remove('hidden');
+            remoteVideo.play();
+            logAction(`Filme "${fileMeta.name}" carregado e em exibição no PC!`);
+            fileBuffer = [];
+          }
           else if (data.type === 'stop_media') {
             mediaOverlay.classList.add('hidden');
             remoteVideo.pause();
+            remoteVideo.src = '';
             remoteVideo.srcObject = null;
           }
           else if (data.type === 'nav') {
@@ -902,7 +965,6 @@
         });
       });
 
-      /* Processamento de Texto no Computador */
       function handleKeyboardInput(data) {
         let activeEl = document.activeElement;
 
@@ -1069,7 +1131,7 @@
 
 
     /* ==========================================================================
-       MODO CONTROLLER (CELULAR - MIRROR SCREEN & FILE STREAM)
+       MODO CONTROLLER (CELULAR - TRANSMISSÃO DE VÍDEO & CÂMERA)
        ========================================================================== */
     function initControllerMode(targetRoomId) {
       document.getElementById('controller-view').classList.remove('hidden');
@@ -1083,10 +1145,12 @@
       const btnCalibrate = document.getElementById('btn-calibrate');
       const instructionText = document.getElementById('instruction-text');
 
-      const btnMirrorScreen = document.getElementById('btn-mirror-screen');
+      const btnCameraStream = document.getElementById('btn-camera-stream');
       const btnStreamFile = document.getElementById('btn-stream-file');
       const mediaFileInput = document.getElementById('media-file-input');
-      const localVideoPlayer = document.getElementById('local-video-player');
+      const progressContainer = document.getElementById('transfer-progress-container');
+      const progressFill = document.getElementById('transfer-progress-fill');
+      const progressStatusText = document.getElementById('transfer-status-text');
 
       const btnToggleKeyboard = document.getElementById('btn-toggle-keyboard');
       const keyboardBar = document.getElementById('keyboard-bar');
@@ -1126,76 +1190,99 @@
         });
       });
 
-      /* 1. ESPELHAMENTO DE TELA (MIRROR SCREEN) */
-      btnMirrorScreen.addEventListener('click', async () => {
+      /* 1. TRANSMISSÃO DE CÂMERA AO VIVO EM HD */
+      btnCameraStream.addEventListener('click', async () => {
         vibrate(30);
-        if (btnMirrorScreen.classList.contains('active')) {
+        if (btnCameraStream.classList.contains('active')) {
           if (activeCall) activeCall.close();
-          btnMirrorScreen.classList.remove('active');
+          btnCameraStream.classList.remove('active');
           if (conn && conn.open) conn.send({ type: 'stop_media' });
           return;
         }
 
         try {
-          if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-            alert('Espelhamento de tela não é suportado neste navegador móvel.');
-            return;
-          }
-
-          const stream = await navigator.mediaDevices.getDisplayMedia({
-            video: { cursor: "always" },
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
             audio: true
           });
 
           activeCall = peer.call(targetRoomId, stream);
-          btnMirrorScreen.classList.add('active');
+          btnCameraStream.classList.add('active');
 
           stream.getVideoTracks()[0].onended = () => {
-            btnMirrorScreen.classList.remove('active');
+            btnCameraStream.classList.remove('active');
             if (conn && conn.open) conn.send({ type: 'stop_media' });
           };
         } catch (err) {
           console.error(err);
-          alert('Não foi possível iniciar o espelhamento de tela.');
+          alert('Erro ao acessar a câmera/microfone do celular.');
         }
       });
 
-      /* 2. TRANSMISSÃO DE FILME / VÍDEO LOCAL */
+      /* 2. TRANSMISSÃO ROBUSTA DE FILMES E VÍDEOS POR DADOS WEBRTC */
       btnStreamFile.addEventListener('click', () => {
         vibrate(30);
-        if (btnStreamFile.classList.contains('active')) {
-          if (activeCall) activeCall.close();
-          localVideoPlayer.pause();
-          localVideoPlayer.src = '';
-          btnStreamFile.classList.remove('active');
-          if (conn && conn.open) conn.send({ type: 'stop_media' });
-          return;
-        }
-
         mediaFileInput.click();
       });
 
       mediaFileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
-        if (!file) return;
+        if (!file || !conn || !conn.open) return;
 
-        const fileUrl = URL.createObjectURL(file);
-        localVideoPlayer.src = fileUrl;
-        localVideoPlayer.play().then(() => {
-          // Captura a transmissão em tempo real do elemento de vídeo
-          const stream = localVideoPlayer.captureStream ? localVideoPlayer.captureStream() : (localVideoPlayer.mozCaptureStream ? localVideoPlayer.mozCaptureStream() : null);
-
-          if (stream) {
-            activeCall = peer.call(targetRoomId, stream);
-            btnStreamFile.classList.add('active');
-          } else {
-            alert('A captura de stream de mídia não é suportada neste navegador.');
-          }
-        }).catch(err => {
-          console.error(err);
-          alert('Erro ao carregar o arquivo de vídeo.');
-        });
+        sendVideoFileInChunks(file);
       });
+
+      function sendVideoFileInChunks(file) {
+        const CHUNK_SIZE = 64 * 1024; // Pedaços otimizados de 64KB
+        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+        let currentChunk = 0;
+
+        progressContainer.classList.remove('hidden');
+        progressFill.style.width = '0%';
+        progressStatusText.textContent = `Enviando "${file.name}" ao PC...`;
+
+        conn.send({
+          type: 'file_start',
+          name: file.name,
+          mime: file.type || 'video/mp4',
+          size: file.size,
+          totalChunks: totalChunks
+        });
+
+        const reader = new FileReader();
+
+        function readNextChunk() {
+          const start = currentChunk * CHUNK_SIZE;
+          const end = Math.min(start + CHUNK_SIZE, file.size);
+          const slice = file.slice(start, end);
+          reader.readAsArrayBuffer(slice);
+        }
+
+        reader.onload = (e) => {
+          conn.send({
+            type: 'file_chunk',
+            chunkIndex: currentChunk,
+            data: e.target.result
+          });
+
+          currentChunk++;
+          const percent = Math.floor((currentChunk / totalChunks) * 100);
+          progressFill.style.width = `${percent}%`;
+
+          if (currentChunk < totalChunks) {
+            setTimeout(readNextChunk, 1);
+          } else {
+            conn.send({ type: 'file_end' });
+            progressStatusText.textContent = 'Transmissão Concluída!';
+            vibrate([40, 40]);
+            setTimeout(() => {
+              progressContainer.classList.add('hidden');
+            }, 2000);
+          }
+        };
+
+        readNextChunk();
+      }
 
       /* Ativação dos Sensores */
       btnSensors.addEventListener('click', async () => {
