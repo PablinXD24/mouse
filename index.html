@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Air Mouse - Pointer Controller</title>
+  <title>Air Mouse - Laser Pointer Remote</title>
 
-  <!-- CDNs das bibliotecas (QRCode e PeerJS para WebRTC) -->
+  <!-- CDNs (QRCode e PeerJS) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
@@ -45,10 +45,10 @@
       display: none !important;
     }
 
-    /* ================= ESTILOS DESKTOP (HOST) ================= */
+    /* ================= DESKTOP STYLES ================= */
     #virtual-cursor {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       background-color: var(--accent-color);
       border: 2px solid #ffffff;
       border-radius: 50%;
@@ -58,7 +58,7 @@
       transform: translate(-50%, -50%);
       pointer-events: none;
       z-index: 9999;
-      box-shadow: 0 0 15px rgba(56, 189, 248, 0.8);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
       transition: transform 0.05s ease-out;
     }
 
@@ -156,7 +156,7 @@
     }
 
 
-    /* ================= ESTILOS CELULAR (CONTROLLER - AIR MOUSE) ================= */
+    /* ================= MOBILE CONTROLLER (POINTER MODE) ================= */
     #controller-view {
       display: flex;
       flex-direction: column;
@@ -173,23 +173,28 @@
       color: var(--accent-color);
     }
 
-    .air-zone {
+    .pointer-zone {
       flex: 1;
       background: var(--card-bg);
-      border: 2px solid rgba(56, 189, 248, 0.3);
+      border: 2px dashed rgba(56, 189, 248, 0.4);
       border-radius: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 1rem;
-      padding: 1rem;
+      padding: 1.5rem;
       text-align: center;
+    }
+
+    .remote-icon {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
     }
 
     .action-btn {
       width: 100%;
-      padding: 1rem;
+      padding: 1.2rem;
       background: var(--btn-color);
       color: white;
       border: none;
@@ -198,7 +203,6 @@
       font-weight: bold;
       cursor: pointer;
       touch-action: manipulation;
-      transition: background 0.2s;
     }
 
     .action-btn.secondary {
@@ -213,7 +217,7 @@
     .mouse-buttons {
       display: flex;
       gap: 1rem;
-      height: 90px;
+      height: 100px;
     }
 
     .sensitivity-control {
@@ -221,6 +225,9 @@
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
+      background: var(--card-bg);
+      padding: 0.8rem 1rem;
+      border-radius: 12px;
     }
   </style>
 </head>
@@ -233,7 +240,7 @@
     <div id="qr-modal" class="modal">
       <div class="modal-card">
         <h2>Conecte seu Celular</h2>
-        <p>Escaneie o QR Code abaixo para usar seu celular como Air Mouse:</p>
+        <p>Escaneie o QR Code abaixo para usar seu celular como Controle Remoto Pointer:</p>
         <div id="qrcode"></div>
         <div id="status-badge" class="badge">Aguardando Conexão...</div>
       </div>
@@ -241,8 +248,8 @@
 
     <main class="desktop-content">
       <header>
-        <h1>Air Mouse Interface</h1>
-        <p>Incline e incline seu celular para controlar o cursor na tela!</p>
+        <h1>Air Pointer Remote</h1>
+        <p>Aponte o topo do celular para a tela como um controle remoto!</p>
       </header>
 
       <section class="interactive-zone">
@@ -258,30 +265,30 @@
   </div>
 
 
-  <!-- ================= VISTA DO CELULAR (AIR MOUSE) ================= -->
+  <!-- ================= VISTA DO CELULAR (POINTER CONTROLLER) ================= -->
   <div id="controller-view" class="view hidden">
     <div class="controller-header">
       <span id="controller-status">Conectando ao PC...</span>
     </div>
 
-    <div class="air-zone">
-      <p id="sensor-instructions">Incline o celular para mover o ponteiro no PC</p>
+    <div class="pointer-zone">
+      <div class="remote-icon">📱🎯</div>
+      <p>Aponte a <b>ponta superior</b> do celular para a tela e mova no ar como um controle remoto.</p>
       
-      <!-- Botão para solicitar permissão do giroscópio (Obrigatório em iOS/Safari) -->
-      <button id="btn-enable-sensors" class="action-btn">Ativar Giroscópio</button>
-      <button id="btn-recalibrate" class="action-btn secondary hidden">Centralizar / Recalibrar</button>
+      <!-- Botão obrigatorio em navegadores modernos para habilitar sensores -->
+      <button id="btn-enable-sensors" class="action-btn">Ativar Modo Controle</button>
     </div>
 
-    <!-- BOTÕES DO MOUSE -->
+    <!-- BOTÕES DE CLIQUE -->
     <div class="mouse-buttons">
       <button id="btn-left-click" class="action-btn">Clique Esquerdo</button>
       <button id="btn-right-click" class="action-btn secondary">Clique Direito</button>
     </div>
 
-    <!-- CONTROLE DE SENSIBILIDADE -->
+    <!-- AJUSTE DE SENSIBILIDADE -->
     <div class="sensitivity-control">
       <label for="sens-slider">Sensibilidade:</label>
-      <input type="range" id="sens-slider" min="0.5" max="5" step="0.5" value="2.5">
+      <input type="range" id="sens-slider" min="0.5" max="4" step="0.2" value="1.8">
     </div>
   </div>
 
@@ -335,7 +342,7 @@
             cursorX += data.dx;
             cursorY += data.dy;
 
-            // Mantém dentro dos limites da tela
+            // Limites da tela
             cursorX = Math.max(0, Math.min(window.innerWidth, cursorX));
             cursorY = Math.max(0, Math.min(window.innerHeight, cursorY));
 
@@ -378,25 +385,19 @@
 
 
     /* ==========================================================================
-       MODO CONTROLLER (GIROSCÓPIO / AIR MOUSE)
+       MODO CONTROLLER (POINTER VIA DEVICE MOTION / ROTATION RATE)
        ========================================================================== */
     function initControllerMode(targetRoomId) {
       document.getElementById('controller-view').classList.remove('hidden');
 
       const statusEl = document.getElementById('controller-status');
       const btnSensors = document.getElementById('btn-enable-sensors');
-      const btnRecalibrate = document.getElementById('btn-recalibrate');
       const btnLeft = document.getElementById('btn-left-click');
       const btnRight = document.getElementById('btn-right-click');
       const sensSlider = document.getElementById('sens-slider');
 
       let sensitivity = parseFloat(sensSlider.value);
       let conn = null;
-
-      // Variáveis do sensor
-      let lastGamma = null; // Ângulo YAW / ROLL (Inclinação Lateral -> Eixo X)
-      let lastBeta = null;  // Ângulo PITCH (Inclinação Frontal -> Eixo Y)
-      let sensorsActive = false;
 
       sensSlider.addEventListener('input', (e) => {
         sensitivity = parseFloat(e.target.value);
@@ -419,76 +420,69 @@
         });
       });
 
-      /* Ativação de Sensores com permissão iOS/Android */
+      /* Solicita permissões de movimento (necessário para iOS e Androids novos) */
       btnSensors.addEventListener('click', async () => {
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
           try {
-            const permissionState = await DeviceOrientationEvent.requestPermission();
-            if (permissionState === 'granted') {
-              startGyroscope();
+            const state = await DeviceMotionEvent.requestPermission();
+            if (state === 'granted') {
+              startMotionController();
             } else {
-              alert('Permissão para acessar os sensores foi negada.');
+              alert('Permissão dos sensores negada.');
             }
-          } catch (error) {
-            console.error(error);
+          } catch (e) {
+            console.error(e);
           }
         } else {
-          // Navegadores padrão sem necessidade de permissão explícita
-          startGyroscope();
+          startMotionController();
         }
       });
 
-      btnRecalibrate.addEventListener('click', () => {
-        lastGamma = null;
-        lastBeta = null;
-      });
+      function startMotionController() {
+        btnSensors.innerText = "Controle Ativo!";
+        btnSensors.style.background = "#22c55e";
 
-      function startGyroscope() {
-        sensorsActive = true;
-        btnSensors.classList.add('hidden');
-        btnRecalibrate.classList.remove('hidden');
-
-        window.addEventListener('deviceorientation', handleOrientation);
+        // Escuta a VELOCIDADE DE ROTAÇÃO (Giroscópio físico)
+        window.addEventListener('devicemotion', handleMotion);
       }
 
-      function handleOrientation(event) {
-        if (!sensorsActive || !conn || !conn.open) return;
+      function handleMotion(event) {
+        if (!conn || !conn.open) return;
 
-        const gamma = event.gamma; // [-90, 90] inclinação esquerda/direita
-        const beta = event.beta;   // [-180, 180] inclinação frente/trás
+        const rot = event.rotationRate;
+        if (!rot) return;
 
-        if (lastGamma === null || lastBeta === null) {
-          lastGamma = gamma;
-          lastBeta = beta;
-          return;
-        }
+        /*
+           Mapeamento para segurar como Controle Remoto (ponta apontada para frente):
+           - Mover para os lados (Guinar / Yaw): Rotação no eixo Alpha ou Gamma do celular.
+           - Mover para cima/baixo (Arfagem / Pitch): Rotação no eixo Beta.
+        */
+        
+        // Inverte ou ajusta os sinais para corresponder ao movimento natural do ponteiro
+        let gyroX = (rot.alpha || rot.gamma || 0); // Giro lateral
+        let gyroY = (rot.beta || 0);               // Giro vertical
 
-        // Calcula a variação de ângulo
-        let deltaX = (gamma - lastGamma) * sensitivity;
-        let deltaY = (beta - lastBeta) * sensitivity;
+        // Calcula a variação de movimento (dx, dy)
+        let dx = -gyroX * sensitivity * 0.8;
+        let dy = -gyroY * sensitivity * 0.8;
 
-        // Atualiza a referência
-        lastGamma = gamma;
-        lastBeta = beta;
+        // Zona morta (Deadzone) para eliminar tremores mínimos da mão
+        if (Math.abs(dx) < 0.3) dx = 0;
+        if (Math.abs(dy) < 0.3) dy = 0;
 
-        // Filtro de ruído mínimo (Deadzone para evitar tremedeira da mão)
-        if (Math.abs(deltaX) < 0.2) deltaX = 0;
-        if (Math.abs(deltaY) < 0.2) deltaY = 0;
-
-        if (deltaX !== 0 || deltaY !== 0) {
+        if (dx !== 0 || dy !== 0) {
           conn.send({
             type: 'move',
-            dx: deltaX,
-            dy: deltaY
+            dx: dx,
+            dy: dy
           });
         }
       }
 
-      /* Envio de Cliques */
       function sendClick() {
         if (conn && conn.open) {
           conn.send({ type: 'click' });
-          if (navigator.vibrate) navigator.vibrate(30);
+          if (navigator.vibrate) navigator.vibrate(25);
         }
       }
 
