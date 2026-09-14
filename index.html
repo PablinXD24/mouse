@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Air Mouse Pro - Single Pad</title>
+  <title>Air Mouse Pro - Universal Scroll Pad</title>
 
   <!-- CDNs (QRCode.js e PeerJS) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -60,7 +60,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      pointer-events: none;
+      pointer-events: none; /* Garante que o cursor não atrapalhe a detecção do elemento abaixo */
       z-index: 9999;
       box-shadow: 0 0 16px var(--accent-color);
       transition: background-color 0.15s, transform 0.1s;
@@ -126,6 +126,8 @@
       padding: 3rem;
       max-width: 900px;
       margin: 0 auto;
+      height: 100vh;
+      overflow-y: auto;
     }
 
     .interactive-zone {
@@ -163,9 +165,9 @@
     }
 
     .scroll-test-area {
-      height: 120px;
+      height: 140px;
       overflow-y: auto;
-      background: rgba(0,0,0,0.3);
+      background: rgba(0,0,0,0.4);
       padding: 1rem;
       border-radius: 8px;
       border: 1px solid var(--border-color);
@@ -300,8 +302,8 @@
       right: 0;
       top: 0;
       bottom: 0;
-      width: 54px;
-      background: rgba(0, 0, 0, 0.35);
+      width: 58px;
+      background: rgba(0, 0, 0, 0.4);
       border-left: 1px solid var(--border-color);
       display: flex;
       align-items: center;
@@ -384,20 +386,30 @@
         <h2>Área de Teste de Funções</h2>
         
         <div class="card-grid">
-          <button class="test-btn" onclick="highlightCard(this, 'Clique Comum (Direito na Tela)')">Botão 1 (Clique Comum)</button>
-          <button class="test-btn" oncontextmenu="highlightCard(this, 'Clique Secundário (Esquerdo na Tela)'); return false;">Botão 2 (Menu Contexto)</button>
+          <button class="test-btn" onclick="highlightCard(this, 'Clique Comum (Lado Direito)')">Botão 1 (Clique Comum)</button>
+          <button class="test-btn" oncontextmenu="highlightCard(this, 'Clique Secundário (Lado Esquerdo)'); return false;">Botão 2 (Menu Contexto)</button>
           <button class="test-btn" onauxclick="highlightCard(this, 'Clique Central M3')">Botão 3 (M3)</button>
         </div>
 
-        <h3>Teste de Rolagem (Scroll):</h3>
+        <h3>Caixa de Teste de Scroll Interna #1:</h3>
         <div class="scroll-test-area">
-          <p>1. Arraste o dedo na barra de scroll na borda direita da tela do celular...</p>
-          <p>2. Linha de teste de rolagem...</p>
-          <p>3. Role a página para cima ou para baixo...</p>
-          <p>4. Conteúdo de teste carregado...</p>
-          <p>5. Mais linhas aqui...</p>
-          <p>6. Quase no final!</p>
-          <p>7. Fim da área de rolagem.</p>
+          <p>1. Posicione o cursor sobre ESTA caixa e deslize a barra de scroll do celular...</p>
+          <p>2. Linha de teste de rolagem interna...</p>
+          <p>3. Apenas esta caixa deve rolar quando o mouse estiver sobre ela!</p>
+          <p>4. Conteúdo rolável de teste...</p>
+          <p>5. Testando detecção do elemento rolável sob o cursor...</p>
+          <p>6. Quase no fim da caixa #1...</p>
+          <p>7. Fim do scroll da caixa #1.</p>
+        </div>
+
+        <h3 style="margin-top: 1.5rem;">Caixa de Teste de Scroll Interna #2:</h3>
+        <div class="scroll-test-area">
+          <p>A. Mova o cursor para ESTA segunda caixa para testar o scroll automático...</p>
+          <p>B. A caixa #2 rolará independentemente!</p>
+          <p>C. Linha de conteúdo B3...</p>
+          <p>D. Linha de conteúdo B4...</p>
+          <p>E. Linha de conteúdo B5...</p>
+          <p>F. Fim do scroll da caixa #2.</p>
         </div>
 
         <div id="feedback-log">Nenhuma ação registrada ainda.</div>
@@ -440,7 +452,7 @@
         </div>
       </div>
 
-      <!-- Rodapé com Lados Invertidos conforme Solicitado -->
+      <!-- Rodapé com Lados Invertidos -->
       <div class="square-footer-buttons">
         <!-- LADO ESQUERDO: Clique Direito (Secundário) -->
         <button id="btn-right-click" class="sq-mouse-btn">
@@ -548,13 +560,9 @@
           else if (data.type === 'middleclick') {
             triggerMouseEvent('auxclick', currentX, currentY, { button: 1 });
           }
+          /* DETECÇÃO INTELIGENTE DE ROLAGEM UNIVERSAL */
           else if (data.type === 'scroll') {
-            const targetEl = document.elementFromPoint(currentX, currentY) || window;
-            if (targetEl.scrollBy) {
-              targetEl.scrollBy({ top: data.deltaY, behavior: 'smooth' });
-            } else {
-              window.scrollBy({ top: data.deltaY, behavior: 'smooth' });
-            }
+            scrollElementUnderCursor(currentX, currentY, data.deltaY);
           }
           else if (data.type === 'nav') {
             if (data.action === 'back') history.back();
@@ -569,6 +577,45 @@
           qrModal.style.display = 'flex';
         });
       });
+
+      /* Função para rolar qualquer elemento sob o cursor virtual */
+      function scrollElementUnderCursor(x, y, deltaY) {
+        let el = document.elementFromPoint(x, y);
+
+        // Dispara primeiro o evento sintético de 'wheel' (para compatibilidade nativa e frameworks JS)
+        if (el) {
+          const wheelEvt = new WheelEvent('wheel', {
+            bubbles: true,
+            cancelable: true,
+            clientX: x,
+            clientY: y,
+            deltaY: deltaY,
+            deltaMode: 0
+          });
+          const wasCanceled = !el.dispatchEvent(wheelEvt);
+          if (wasCanceled) return; // Se o evento foi tratado por um script personalizado, encerra
+        }
+
+        // Percorre a árvore DOM até encontrar um contêiner verdadeiramente rolável
+        while (el && el !== document.body && el !== document.documentElement) {
+          const style = window.getComputedStyle(el);
+          const overflowY = style.overflowY;
+          const isScrollable = (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') && (el.scrollHeight > el.clientHeight);
+
+          if (isScrollable) {
+            const initialScrollTop = el.scrollTop;
+            el.scrollBy({ top: deltaY, behavior: 'instant' });
+            
+            // Se a posição de scroll mudou, o elemento aceitou o comando!
+            if (el.scrollTop !== initialScrollTop) return;
+          }
+          el = el.parentElement;
+        }
+
+        // Caso nenhum elemento filho seja rolável, rola a janela principal ou página
+        window.scrollBy({ top: deltaY, behavior: 'instant' });
+        document.querySelector('.desktop-content')?.scrollBy({ top: deltaY, behavior: 'instant' });
+      }
 
       function triggerMouseEvent(eventName, x, y, extraInit = {}) {
         cursor.classList.add('active');
@@ -709,7 +756,7 @@
         });
       }
 
-      /* LÓGICA DE SCROLL PELA BARRA DE SCROLL */
+      /* LÓGICA DE SCROLL PELA BARRA DEDICADA */
       let lastTouchY = 0;
 
       scrollStrip.addEventListener('touchstart', (e) => {
@@ -723,10 +770,10 @@
         e.preventDefault();
 
         const currentY = e.touches[0].clientY;
-        const deltaY = (lastTouchY - currentY) * 3; // Sensibilidade do Scroll
+        const deltaY = (lastTouchY - currentY) * 3.5; // Fator de sensibilidade do Scroll
         lastTouchY = currentY;
 
-        if (conn && conn.open && Math.abs(deltaY) > 1) {
+        if (conn && conn.open && Math.abs(deltaY) > 0.5) {
           conn.send({ type: 'scroll', deltaY: deltaY });
         }
       });
@@ -736,7 +783,7 @@
         scrollStrip.classList.remove('active');
       });
 
-      /* GESTOS DE TOQUE NA ÁREA CENTRAL (INVERTIDOS CONFORME SOLICITADO) */
+      /* GESTOS DE TOQUE NA ÁREA CENTRAL */
       let dragTimer = null;
       let isDragging = false;
       let touchStartTime = 0;
@@ -748,7 +795,7 @@
         const touchX = e.touches[0].clientX;
         const surfaceWidth = touchSurface.clientWidth;
 
-        // Lado Direito da Superfície = Clique Comum (com suporte a drag)
+        // Lado Direito da Superfície = Clique Comum (com suporte a Drag)
         if (touchX > surfaceWidth / 2) {
           dragTimer = setTimeout(() => {
             isDragging = true;
@@ -785,8 +832,8 @@
         }
       });
 
-      /* LÓGICA DOS BOTÕES INVERTIDOS NO RODAPÉ DO QUADRADO */
-      // LADO DIREITO (CLIQUE COMUM)
+      /* BOTÕES NO RODAPÉ DO QUADRADO */
+      // LADO DIREITO (CLIQUE COMUM / DRAG)
       btnLeft.addEventListener('touchstart', (e) => {
         e.preventDefault();
         btnLeft.classList.add('pressed');
